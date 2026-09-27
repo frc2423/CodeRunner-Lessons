@@ -58,6 +58,14 @@
       "order": 70
     },
     {
+      "id": "flywheel-dashboard",
+      "title": "Flywheel Tuning",
+      "description": "Tune a simulated flywheel with a custom dashboard: P control, feedforward, and an at-speed signal.",
+      "subdir": "modules/flywheel-dashboard",
+      "kind": "robot",
+      "order": 75
+    },
+    {
       "id": "command-based-drive",
       "title": "Command-Based Robot",
       "description": "Commands, button bindings, a simple drive subsystem, and autonomous routines.",

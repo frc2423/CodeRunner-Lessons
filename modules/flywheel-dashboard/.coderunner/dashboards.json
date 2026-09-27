@@ -1,0 +1,8 @@
+{
+  "dashboards": [
+    {
+      "title": "Flywheel Tuning",
+      "entry": "dashboard/index.html"
+    }
+  ]
+}

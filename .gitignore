@@ -11,3 +11,7 @@ AdvantageKit_SkeletonTemplate.zip
 **/build/
 **/.gradle/
 **/src/main/java/frc/robot/BuildConstants.java
+
+# Dashboard sources: dependencies and local builds (the built copy lives in the module).
+dashboards-src/**/node_modules/
+dashboards-src/**/dist/
