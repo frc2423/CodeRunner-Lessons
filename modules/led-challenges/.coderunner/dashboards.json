@@ -1,0 +1,8 @@
+{
+  "dashboards": [
+    {
+      "title": "LED Challenges",
+      "entry": "dashboard/index.html"
+    }
+  ]
+}

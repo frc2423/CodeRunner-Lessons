@@ -1,0 +1,513 @@
+:root {
+	--bg: #0f1115;
+	--card: #181b22;
+	--border: #2a2f3a;
+	--text: #e6e8ee;
+	--muted: #8b92a3;
+	--accent: #4f8cff;
+	--good: #2fbf71;
+	--bad: #e5484d;
+	--warn: #f5b942;
+	--code-bg: #11141a;
+	color-scheme: dark;
+	font-family:
+		Inter,
+		system-ui,
+		-apple-system,
+		"Segoe UI",
+		sans-serif;
+}
+
+:root[data-theme="light"] {
+	--bg: #f5f6f8;
+	--card: #ffffff;
+	--border: #dde1e8;
+	--text: #1b1f27;
+	--muted: #667085;
+	--warn: #b7791f;
+	--code-bg: #f0f2f5;
+	color-scheme: light;
+}
+
+* {
+	box-sizing: border-box;
+}
+
+body {
+	margin: 0;
+	background: var(--bg);
+	color: var(--text);
+	font-size: 14px;
+	line-height: 1.45;
+}
+
+code {
+	font-family: ui-monospace, "Cascadia Code", Menlo, Consolas, monospace;
+	font-size: 12.5px;
+}
+
+p code,
+li code,
+dd code,
+span code,
+.banner code {
+	padding: 1px 4px;
+	border-radius: 4px;
+	background: var(--code-bg);
+}
+
+.dashboard {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	max-width: 960px;
+	margin: 0 auto;
+	padding: 12px;
+}
+
+/* Status bar ------------------------------------------------------------ */
+
+.status-bar {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	font-size: 13px;
+}
+
+.robot-state {
+	margin-left: auto;
+	color: var(--muted);
+}
+
+.dot {
+	width: 10px;
+	height: 10px;
+	border-radius: 50%;
+	background: var(--muted);
+}
+
+.dot-on {
+	background: var(--good);
+	box-shadow: 0 0 8px var(--good);
+}
+
+/* Cards ------------------------------------------------------------------ */
+
+.card {
+	display: flex;
+	flex-direction: column;
+	gap: 12px;
+	padding: 14px;
+	border: 1px solid var(--border);
+	border-radius: 12px;
+	background: var(--card);
+}
+
+.card h2,
+.card h3 {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+	margin: 0;
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+	color: var(--muted);
+}
+
+.muted {
+	margin: 0;
+	color: var(--muted);
+	font-size: 12px;
+	font-weight: 400;
+	letter-spacing: normal;
+	text-transform: none;
+}
+
+/* Controls --------------------------------------------------------------- */
+
+.controls {
+	gap: 10px;
+}
+
+.picker,
+.actions {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: center;
+	gap: 8px;
+}
+
+select {
+	flex: 1;
+	min-width: 0;
+	padding: 8px 10px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--bg);
+	color: var(--text);
+	font: inherit;
+	font-weight: 600;
+}
+
+.button {
+	padding: 7px 14px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	background: var(--bg);
+	color: var(--text);
+	font: inherit;
+	font-weight: 600;
+	cursor: pointer;
+}
+
+.button:hover:not(:disabled) {
+	border-color: var(--accent);
+}
+
+.button:disabled {
+	opacity: 0.45;
+	cursor: not-allowed;
+}
+
+.button-primary {
+	border-color: var(--accent);
+	background: var(--accent);
+	color: #fff;
+}
+
+.button-primary:hover:not(:disabled) {
+	filter: brightness(1.1);
+}
+
+.icon-button {
+	padding: 6px 12px;
+	font-size: 16px;
+	line-height: 1;
+}
+
+.run-state {
+	margin-left: auto;
+	color: var(--muted);
+	font-size: 13px;
+}
+
+/* Banners ---------------------------------------------------------------- */
+
+.banner {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding: 12px 14px;
+	border: 1px solid;
+	border-radius: 12px;
+	font-size: 13px;
+}
+
+.banner-error {
+	border-color: color-mix(in srgb, var(--bad) 50%, transparent);
+	background: color-mix(in srgb, var(--bad) 12%, var(--card));
+}
+
+.banner-warn {
+	border-color: color-mix(in srgb, var(--warn) 50%, transparent);
+	background: color-mix(in srgb, var(--warn) 12%, var(--card));
+}
+
+.banner .error-text {
+	display: block;
+	padding: 8px 10px;
+	white-space: pre-wrap;
+	word-break: break-word;
+	color: var(--bad);
+}
+
+/* LED strips ------------------------------------------------------------- */
+
+.strip-block {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+}
+
+.tag {
+	padding: 2px 8px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--accent) 18%, transparent);
+	color: var(--accent);
+	font-size: 11px;
+	font-weight: 600;
+	letter-spacing: normal;
+	text-transform: none;
+}
+
+.tag-plain {
+	background: var(--code-bg);
+	color: var(--muted);
+	font-weight: 500;
+}
+
+.strip {
+	position: relative;
+	display: grid;
+	gap: 3px;
+	padding: 10px 8px;
+	border-radius: 10px;
+	/* Dark in both themes, like a real strip, so the colors stand out. */
+	background: #0a0b0e;
+	box-shadow: inset 0 0 0 1px #262a33;
+}
+
+.led {
+	aspect-ratio: 1;
+	border-radius: 50%;
+	background: #1d2027;
+	box-shadow: inset 0 0 0 1px #2c313b;
+	transition: background 40ms linear;
+}
+
+.led-on {
+	position: relative;
+}
+
+.strip-idle .led {
+	opacity: 0.35;
+}
+
+.strip-overlay {
+	position: absolute;
+	inset: 0;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	padding: 0 12px;
+	color: #c7ccd6;
+	font-size: 12px;
+	font-weight: 600;
+	text-align: center;
+}
+
+.strip-ticks {
+	display: grid;
+	gap: 3px;
+	padding: 0 8px;
+	color: var(--muted);
+	font-size: 10px;
+	font-variant-numeric: tabular-nums;
+	text-align: center;
+	white-space: nowrap;
+}
+
+.strip-ticks span {
+	overflow: visible;
+}
+
+/* Checklist -------------------------------------------------------------- */
+
+.checklist {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	padding-top: 10px;
+	border-top: 1px solid var(--border);
+}
+
+.checklist ul {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.check {
+	display: flex;
+	gap: 8px;
+	align-items: baseline;
+	color: var(--muted);
+}
+
+.check-icon {
+	width: 1em;
+	font-weight: 700;
+	text-align: center;
+}
+
+.check-pass {
+	color: var(--text);
+}
+
+.check-pass .check-icon {
+	color: var(--good);
+}
+
+.check-fail {
+	color: var(--text);
+}
+
+.check-fail .check-icon {
+	color: var(--bad);
+}
+
+.badge {
+	padding: 2px 10px;
+	border-radius: 999px;
+	font-size: 11px;
+	font-weight: 700;
+	letter-spacing: normal;
+	text-transform: none;
+}
+
+.badge-good {
+	background: color-mix(in srgb, var(--good) 20%, transparent);
+	color: var(--good);
+}
+
+/* Challenge details ------------------------------------------------------ */
+
+.details {
+	gap: 16px;
+}
+
+.details section {
+	display: flex;
+	flex-direction: column;
+	gap: 8px;
+}
+
+.details-header {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.level {
+	color: var(--accent);
+	font-size: 12px;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.card .details-title {
+	margin: 0;
+	color: var(--text);
+	font-size: 20px;
+	letter-spacing: normal;
+	text-transform: none;
+}
+
+.summary {
+	margin: 0;
+	font-size: 15px;
+}
+
+.file-path {
+	margin: 0;
+}
+
+.file-path code {
+	display: block;
+	padding: 8px 10px;
+	border: 1px solid var(--border);
+	border-radius: 8px;
+	overflow-wrap: anywhere;
+	user-select: all;
+}
+
+.chips {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.chips li {
+	padding: 3px 10px;
+	border-radius: 999px;
+	background: color-mix(in srgb, var(--good) 16%, transparent);
+	color: var(--good);
+	font-size: 12px;
+	font-weight: 600;
+}
+
+.steps,
+.hints {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	padding-left: 22px;
+}
+
+.hints li::marker {
+	color: var(--warn);
+	font-weight: 700;
+}
+
+.code-refs {
+	display: flex;
+	flex-direction: column;
+	gap: 10px;
+	margin: 0;
+}
+
+.code-refs dt {
+	margin: 0;
+}
+
+.code-refs pre {
+	margin: 0;
+	padding: 8px 10px;
+	border-radius: 8px;
+	background: var(--code-bg);
+	overflow-x: auto;
+}
+
+.code-refs dd {
+	margin: 4px 0 0 2px;
+	color: var(--muted);
+	font-size: 13px;
+}
+
+.details .button {
+	align-self: flex-start;
+}
+
+.docs {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	margin: 0;
+	padding: 0;
+	list-style: none;
+}
+
+.docs li {
+	display: flex;
+	flex-direction: column;
+}
+
+.doc-url {
+	color: var(--accent);
+	font-size: 12px;
+	word-break: break-all;
+	user-select: all;
+}
+
+/* How it works ----------------------------------------------------------- */
+
+.how summary {
+	cursor: pointer;
+	font-weight: 600;
+}
+
+.how .steps {
+	margin-top: 10px;
+}

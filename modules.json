@@ -26,6 +26,14 @@
       "order": 30
     },
     {
+      "id": "led-challenges",
+      "title": "LED Challenges",
+      "description": "Learn programming step by step by lighting up a robot's LED strip, from single LEDs to animations.",
+      "subdir": "modules/led-challenges",
+      "kind": "robot",
+      "order": 35
+    },
+    {
       "id": "closest-distance",
       "title": "Closest Distance",
       "description": "Translation2d math, loops, random points, and logged field outputs.",
