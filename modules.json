@@ -96,6 +96,14 @@
       "subdir": "modules/pid-controllers",
       "kind": "robot",
       "order": 100
+    },
+    {
+      "id": "control-theory",
+      "title": "Control Theory Challenges",
+      "description": "Fifteen control challenges on simulated FRC mechanisms, from bang-bang and PID to feedforward, motion profiles, SysId, LQR and Kalman filters.",
+      "subdir": "modules/control-theory",
+      "kind": "robot",
+      "order": 110
     }
   ]
 }
