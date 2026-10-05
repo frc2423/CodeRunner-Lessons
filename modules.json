@@ -82,6 +82,14 @@
       "order": 80
     },
     {
+      "id": "command-based-challenges",
+      "title": "Command-Based Challenges",
+      "description": "Sixteen challenges on a simulated robot: commands, triggers, interrupts, your own subsystems, and PathPlanner autos, with a live command timeline.",
+      "subdir": "modules/command-based-challenges",
+      "kind": "robot",
+      "order": 85
+    },
+    {
       "id": "kitbot-controls",
       "title": "Kitbot Controls",
       "description": "Modify the AdvantageKit kitbot controls with fast and spin modes.",

@@ -1,0 +1,8 @@
+{
+  "dashboards": [
+    {
+      "title": "Command Lab",
+      "entry": "dashboard/index.html"
+    }
+  ]
+}
