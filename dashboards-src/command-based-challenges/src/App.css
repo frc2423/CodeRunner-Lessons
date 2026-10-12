@@ -848,7 +848,7 @@ span code,
 	display: flex;
 	flex-direction: column;
 	gap: 6px;
-	max-width: 1280px;
+	max-width: 1700px;
 	margin: 0 auto;
 	padding: 6px 8px 12px;
 }
@@ -1071,15 +1071,16 @@ select {
 	text-transform: uppercase;
 }
 
+/*
+ * The views keep a readable size: at least 500px tall, growing to fill a big
+ * pane so everything fits on one screen when the editor and Driver Station are
+ * minimized. In a short pane the page scrolls instead of shrinking them.
+ */
 .lab {
-	display: grid;
-	grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
-	grid-template-rows: minmax(0, 0.9fr) minmax(0, 1.1fr);
-	grid-template-areas:
-		"field robot"
-		"field pad";
-	gap: 6px 10px;
-	height: clamp(300px, 46vh, 540px);
+	display: flex;
+	flex-direction: row;
+	gap: 10px;
+	height: clamp(500px, calc(100vh - 365px), 760px);
 }
 
 .panel {
@@ -1097,16 +1098,40 @@ select {
 	min-height: 0;
 }
 
+/* The field is about square: its width follows its height. */
 .panel-field {
-	grid-area: field;
+	flex: none;
+	height: 100%;
+	aspect-ratio: 0.98;
+	max-width: 60%;
 }
 
-.panel-robot {
-	grid-area: robot;
+.lab-side {
+	flex: 1;
+	min-width: 0;
+	container-type: inline-size;
 }
 
-.panel-pad {
-	grid-area: pad;
+.lab-side-panels {
+	display: flex;
+	flex-direction: column;
+	gap: 6px;
+	height: 100%;
+}
+
+.lab-side-panels > .panel {
+	flex: 1;
+}
+
+.lab-side-panels > .panel-pad {
+	flex: 1.15;
+}
+
+/* A wide side column puts the robot and the controller next to each other. */
+@container (min-width: 760px) {
+	.lab-side-panels {
+		flex-direction: row;
+	}
 }
 
 .field,
@@ -1158,15 +1183,21 @@ select {
 	pointer-events: none;
 }
 
-@media (max-width: 520px) {
+@media (max-width: 600px) {
 	.lab {
-		grid-template-columns: minmax(0, 1fr);
-		grid-template-rows: 300px 170px 200px;
-		grid-template-areas:
-			"field"
-			"robot"
-			"pad";
+		flex-direction: column;
 		height: auto;
+	}
+
+	.panel-field {
+		width: 100%;
+		height: auto;
+		max-width: none;
+	}
+
+	.lab-side-panels > .panel {
+		height: 230px;
+		flex: none;
 	}
 }
 

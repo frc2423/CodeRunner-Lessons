@@ -265,13 +265,18 @@ export default function App() {
 						start={STARTS[selected.id] ?? SPOT}
 					/>
 				</div>
-				<div className="panel panel-robot">
-					<span className="panel-label">Robot</span>
-					<RobotView state={lab.state} />
-				</div>
-				<div className="panel panel-pad">
-					<span className="panel-label">Controller{scripted ? " · the trial is driving" : ""}</span>
-					<Gamepad controller={lab.controller} onChange={lab.setVirtual} disabled={!lab.connected || scripted} />
+				{/* The side column is a container, so it can lay its panels out side by side when it's wide. */}
+				<div className="lab-side">
+					<div className="lab-side-panels">
+						<div className="panel panel-robot">
+							<span className="panel-label">Robot</span>
+							<RobotView state={lab.state} />
+						</div>
+						<div className="panel panel-pad">
+							<span className="panel-label">Controller{scripted ? " · the trial is driving" : ""}</span>
+							<Gamepad controller={lab.controller} onChange={lab.setVirtual} disabled={!lab.connected || scripted} />
+						</div>
+					</div>
 				</div>
 			</section>
 
