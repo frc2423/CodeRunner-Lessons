@@ -52,7 +52,7 @@ in `challenges/`, its entry in `Challenges.java`, and its entry in
 | Topic | Direction | Meaning |
 | --- | --- | --- |
 | `/SmartDashboard/CommandLab/RunRequest` | dashboard → robot | `"<id>\|trial#<nonce>"` or `"<id>\|free#<nonce>"` loads a challenge; `"#<nonce>"` stops. |
-| `/SmartDashboard/CommandLab/Virtual` | dashboard → robot | The on-screen controller: `[button bits, d-pad angle, six axes]`, axes in `XboxController.Axis` order. |
+| `/SmartDashboard/CommandLab/Virtual` | dashboard → robot | The tab's controller, so no gamepad is needed: on-screen clicks and drags merged with the keyboard (same keys as the Driver Station's keyboard mode, see `src/keyboard.ts`). `[button bits, d-pad angle, six axes]`, axes in `XboxController.Axis` order. `LabController.java` ORs it with the Driver Station's joystick. |
 | `/SmartDashboard/CommandLab/FieldEvent` | dashboard → robot | `"rollin#<nonce>"` (a piece into the intake) or `"reset#<nonce>"`, outside trials only. |
 | `/CommandLab/Catalog` | robot → dashboard | JSON, published once at startup: each challenge's mode, length and check labels. |
 | `/CommandLab/Result` | robot → dashboard | JSON, when a trial ends: every check's outcome and the score. |

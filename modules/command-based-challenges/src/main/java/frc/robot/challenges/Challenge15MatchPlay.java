@@ -8,7 +8,8 @@ import frc.robot.lab.CommandChallenge;
  * Challenge 15: Match Play.
  *
  * <p>Put it all together. Write the controls you'd want in a real match, then play a one-minute
- * match yourself, with your gamepad or the keyboard. Score at least 3 pieces to pass.
+ * match yourself: with the keyboard (click the Command Lab tab first), the tab's on-screen
+ * controller, or a gamepad. Score at least 3 pieces to pass.
  *
  * <p>Ideas, from the earlier challenges:
  *

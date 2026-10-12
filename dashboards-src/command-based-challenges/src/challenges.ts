@@ -118,8 +118,8 @@ export const CHALLENGES: Challenge[] = [
 		steps: [
 			"Click **Start** in the Driver Station. The dot at the top of this tab turns green when the robot program is running.",
 			"Click **Run trial**, then **Enable** the robot in **Teleop**. The trial's scripted driver holds X.",
-			"Watch the **Command timeline**: a bar appears in the Intake lane while X is held. The X button lights up on the controller.",
-			"Click **Free play** and try it yourself: hold X on your gamepad, on the keyboard, or on the controller drawn in this tab.",
+			"Watch the **Command timeline**: a bar appears in the Intake lane while X is held, and X lights up on the controller. Trials press the buttons for you, so you never need a controller for them.",
+			"Click **Free play** and try it yourself. No gamepad needed: click this tab and hold **J** (the X button's key), or hold X on the controller drawn here. Every button's key is drawn next to it.",
 			"Open `Challenge00Example.java` and read how it's built.",
 		],
 		code: [
@@ -201,7 +201,7 @@ export const CHALLENGES: Challenge[] = [
 			"Make the command with `intake.startEnd(...)`. When it starts: deploy the intake and run the rollers at `Intake.INTAKE_SPEED`. When it ends: stop the rollers and retract the intake.",
 			"Bind it to `controller.leftBumper()` with `whileTrue`.",
 			ENABLE_TELEOP,
-			"In free play, hold LB and click **Roll in a piece**: the intake grabs it. (Getting it all the way in is challenge 5.)",
+			"In free play, hold LB (key **E**) and click **+ Piece**: the intake grabs it. (Getting it all the way in is challenge 5.)",
 		],
 		code: [
 			{
@@ -271,7 +271,7 @@ export const CHALLENGES: Challenge[] = [
 			"Make a command with `drive.run(...)` that calls `drive.driveFieldRelative(xSpeed, ySpeed, rotationSpeed)`, reading the sticks inside the lambda.",
 			"Make it the drive's default command with `drive.setDefaultCommand(...)`.",
 			ENABLE_TELEOP,
-			"In free play, drive around the field! The Drive lane on the timeline shows your default command running.",
+			"In free play, drive around the field: click this tab, then **W A S D** move and the **arrow keys** turn (hold **Shift** to go slower). The Drive lane on the timeline shows your default command running.",
 		],
 		code: [
 			{ code: "drive.setDefaultCommand(command)", text: "The command the drive runs when nothing else needs it." },
@@ -686,7 +686,7 @@ export const CHALLENGES: Challenge[] = [
 		summary:
 			"Put it all together: write the controls you'd want in a real match, then drive a one-minute match yourself. Score 3 to pass, 6 for a star, and hang at the end for another.",
 		trial:
-			"You drive! A 60-second match with pieces on the field; the human player rolls in a new one near your driver station every few seconds.",
+			"You drive, with the keyboard, a gamepad, or the on-screen controller! A 60-second match with pieces on the field; the human player rolls in a new one near your driver station every few seconds.",
 		learn: ["putting it all together", "driver controls"],
 		idea: [
 			"Real robot code is made of the pieces you've written: a default drive command, intake and shoot commands, triggers that make the controls smart, and LEDs that tell the driver what's happening.",
@@ -696,7 +696,7 @@ export const CHALLENGES: Challenge[] = [
 		steps: [
 			"Copy the commands you need from your earlier challenges into this file.",
 			"Bind them to buttons, and give the drive a default command.",
-			"Click **Free play** to practise. **Roll in a piece** and **Reset field** help.",
+			"Click **Free play** to practise. **+ Piece** and **Reset** help.",
 			"When you're ready: **Run trial**, then Enable in Teleop. Go!",
 		],
 		code: [
@@ -704,7 +704,7 @@ export const CHALLENGES: Challenge[] = [
 			{ code: "new Climber()", text: "Your climber from challenge 11. The tower is in the top-left corner of the field." },
 		],
 		hints: [
-			"With a keyboard, practise in free play first. The on-screen controller works too.",
+			"No gamepad? Click this tab and drive with the keyboard: **W A S D** to move, **← →** to turn, **Shift** for fine control. Each button's key is drawn on the controller (A is **K**, LB is **E**, RT is **O**...). Practise in free play first.",
 			"The fastest cycle is often: intake and spin up at the same time (challenge 7), then aim and shoot.",
 		],
 		docs: [DOCS.structuring, DOCS.organizing],

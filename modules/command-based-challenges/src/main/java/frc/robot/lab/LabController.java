@@ -16,7 +16,8 @@ import java.util.Map;
  *
  * <ul>
  *   <li>the gamepad or keyboard plugged into CodeRunner's Driver Station (port 0),
- *   <li>the on-screen controller in the Command Lab dashboard, and
+ *   <li>the Command Lab dashboard's controller: its on-screen buttons, and the keyboard while the
+ *       tab has focus, and
  *   <li>during a graded trial, the trial's scripted driver (and nothing else).
  * </ul>
  *

@@ -19,7 +19,7 @@ function FilePath({ file }: { file: string }) {
 
 /**
  * Everything a student needs to attempt a challenge: the idea behind it, where
- * to work, what the trial does, useful code, hints revealed one at a time, and
+ * to work, useful code, hints revealed one at a time, and
  * further reading.
  *
  * Render it with `key={challenge.id}` so the revealed hints reset.
@@ -34,13 +34,7 @@ export function ChallengeDetails({ challenge }: { challenge: Challenge }) {
 					{challenge.level}
 					{challenge.mode === "auto" && <span className="tag">Autonomous</span>}
 				</span>
-				<h2 className="details-title">
-					{challenge.number > 0 && `${challenge.number}. `}
-					{challenge.title}
-				</h2>
-				<p className="summary">
-					<Inline text={challenge.summary} />
-				</p>
+				<h2 className="details-title">How to do it</h2>
 			</header>
 
 			<section>
@@ -79,13 +73,6 @@ export function ChallengeDetails({ challenge }: { challenge: Challenge }) {
 						</li>
 					))}
 				</ol>
-			</section>
-
-			<section>
-				<h3>The trial</h3>
-				<p className="idea">
-					<Inline text={challenge.trial} />
-				</p>
 			</section>
 
 			<section>

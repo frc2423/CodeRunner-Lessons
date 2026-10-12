@@ -14,10 +14,23 @@ Open the **Command Lab** tab next to AdvantageScope. Pick a challenge there to r
    - Write your code in the challenge's file.
    - Save, then click **Restart** in the Driver Station so the robot program is rebuilt with your code. The last thing you ran loads again by itself.
    - Click **Run trial** and enable the robot in the mode the challenge asks for (Teleop, or Autonomous for challenges 13 and 14). Pass every check to complete the challenge; bonus checks earn stars.
-4. Click **Free play** to drive the robot yourself with a gamepad, the keyboard, or the controller drawn in the tab. **Roll in a piece** gives you something to pick up.
+4. Click **Free play** to drive the robot yourself. You don't need a gamepad: click the Command Lab tab and use the keyboard, or click and drag the controller drawn in the tab. **+ Piece** gives you something to pick up.
+
+   | Keys | Controller |
+   | --- | --- |
+   | W A S D | left stick (move) |
+   | arrow keys | right stick (turn) |
+   | Shift (held) | half-speed sticks |
+   | K L J I | A B X Y |
+   | E / U | left / right bumper (LB / RB) |
+   | Q / O | left / right trigger (LT / RT) |
+   | Z X C V | d-pad up / down / left / right |
+   | R / Y | Back / Start |
+
+   These are the same keys as the Driver Station's keyboard mode. A real gamepad works too.
 5. If your code crashes, the tab shows the error and the line it happened on. Fix it and restart.
 
-Commands only run while the robot is enabled, just like on a real robot.
+Commands only run while the robot is enabled, just like on a real robot. Trials press the buttons for you, so no controller is ever needed for them.
 
 ## Challenges
 
