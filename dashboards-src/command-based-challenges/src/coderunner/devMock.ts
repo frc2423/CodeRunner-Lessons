@@ -47,6 +47,8 @@ export function installDevMock(): void {
 	}
 	const get = <T>(topic: string, fallback: T): T => (values.get(topic)?.value as T) ?? fallback;
 
+	// In the browser console, `window.mockDisabled = true` pretends the robot is disabled.
+	const mockEnabled = () => !(window as unknown as { mockDisabled?: boolean }).mockDisabled;
 	const OUT = "/AdvantageKit/RealOutputs/CommandLab";
 	const RUN = "/SmartDashboard/CommandLab/RunRequest";
 
@@ -155,7 +157,7 @@ export function installDevMock(): void {
 		put(`${OUT}/Duration`, "double", mode === "trial" ? 6 : 0);
 		put(`${OUT}/State`, "double[]", [
 			time, x, y, heading, 0, 0, 0, intaking ? 1 : 0, intaking ? 1 : 0, intaking ? 1 : 0, piece, rpm,
-			spinning ? 3000 : 0, 0, 0, 0, ...led, score, 0, 0, 1, 0, intaking ? 14 : 4, piece >= 0.9 ? 1 : 0, 0, x, y,
+			spinning ? 3000 : 0, 0, 0, 0, ...led, score, 0, 0, mockEnabled() ? 1 : 0, 0, intaking ? 14 : 4, piece >= 0.9 ? 1 : 0, 0, x, y,
 			heading, 0, rpm > 2850 ? 1 : 0, run,
 		]);
 		put(`${OUT}/Pieces`, "double[]", pieces.flat());

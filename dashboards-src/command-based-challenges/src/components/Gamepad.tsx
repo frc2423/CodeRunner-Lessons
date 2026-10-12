@@ -17,6 +17,8 @@ type Props = {
 	onChange(values: number[]): void;
 	/** Nothing is sent: no robot program, or a trial's script has the controller. */
 	disabled: boolean;
+	/** Why presses won't do anything right now (robot disabled, nothing loaded), or "". */
+	note?: string;
 };
 
 const NEUTRAL = [0, -1, 0, 0, 0, 0, 0, 0];
@@ -43,7 +45,7 @@ function povIncludes(pov: number, angle: number): boolean {
  * Station's keyboard mode, drawn next to each control). With "Latch" on, a
  * click holds a button down until the next click.
  */
-export function Gamepad({ controller, onChange, disabled }: Props) {
+export function Gamepad({ controller, onChange, disabled, note = "" }: Props) {
 	const [mouse, setMouse] = useState<PadState>(EMPTY_PAD);
 	const [keyboard, setKeyboard] = useState<PadState>(EMPTY_PAD);
 	const [latch, setLatch] = useState(false);
@@ -320,6 +322,8 @@ export function Gamepad({ controller, onChange, disabled }: Props) {
 	const dx = 118;
 	const dy = 168;
 	const anythingHeld = mouse.buttons !== 0 || mouse.pov >= 0 || mouse.axes.some((a) => a !== 0);
+	// Something is being pressed here right now (mouse or keyboard).
+	const anythingPressed = local.buttons !== 0 || local.pov >= 0 || local.axes.some((a) => a !== 0);
 
 	return (
 		<div className={scripted ? "gamepad gamepad-scripted" : "gamepad"}>
@@ -359,6 +363,11 @@ export function Gamepad({ controller, onChange, disabled }: Props) {
 					</span>
 				) : (
 					<span className="tag tag-plain">Click this tab to drive with the keyboard</span>
+				)}
+				{note && (
+					<span className={anythingPressed ? "tag tag-warn tag-flash" : "tag tag-warn"} role="status">
+						{note}
+					</span>
 				)}
 				{controller.rumble > 0 && <span className="tag tag-rumble">rumble</span>}
 				<label className="pad-option" title="Show which key presses each control">

@@ -92,6 +92,21 @@ export default function App() {
 	const starCount = CHALLENGES.reduce((sum, c) => sum + (progress[c.id]?.stars ?? 0), 0);
 	const robotKnowsSelected = !lab.catalog || entry !== undefined;
 
+	// Commands only run while the robot is enabled. A trial says so while it
+	// waits; free play has to say it too, or button presses seem to do nothing.
+	const robotDisabled = lab.connected && lab.state !== undefined && !lab.state.enabled;
+	const freePlayNeedsEnable = freePlay && selectedLoaded && robotDisabled;
+	const enablePrompt = freePlayNeedsEnable
+		? selected.mode === "auto"
+			? "Free play is loaded, but commands only run while the robot is enabled. Click Enable in the Driver Station: Autonomous runs your auto, Teleop lets you drive."
+			: "Free play is loaded, but commands only run while the robot is enabled. Set the Driver Station to Teleop and click Enable."
+		: "";
+	let controllerNote = "";
+	if (lab.connected && !scripted) {
+		if (lab.running === "") controllerNote = "Nothing is loaded: click Free play to try your code";
+		else if (robotDisabled) controllerNote = "Robot disabled: Enable it to run commands";
+	}
+
 	const pickerLabel = (challenge: Challenge) => {
 		const p = progress[challenge.id];
 		const mark = p?.done ? "✓ " : "";
@@ -248,7 +263,7 @@ export default function App() {
 				result={result}
 				trialActive={trialActive}
 				clock={trialRunning && duration > 0 ? { now, duration } : null}
-				waiting={selectedLoaded ? lab.waiting : ""}
+				waiting={selectedLoaded ? lab.waiting || enablePrompt : ""}
 				score={lab.state ? lab.state.score : null}
 			/>
 
@@ -274,7 +289,12 @@ export default function App() {
 						</div>
 						<div className="panel panel-pad">
 							<span className="panel-label">Controller{scripted ? " · the trial is driving" : ""}</span>
-							<Gamepad controller={lab.controller} onChange={lab.setVirtual} disabled={!lab.connected || scripted} />
+							<Gamepad
+								controller={lab.controller}
+								onChange={lab.setVirtual}
+								disabled={!lab.connected || scripted}
+								note={controllerNote}
+							/>
 						</div>
 					</div>
 				</div>
@@ -302,7 +322,7 @@ export default function App() {
 						<Inline text="**Run trial** loads your code and waits for you to **Enable** the robot. Then a scripted driver presses the buttons, and the trial is graded. You don't need a controller for trials." />
 					</li>
 					<li>
-						<Inline text="**Free play** loads your code and lets you drive. No controller needed: click this tab and use the keyboard (the keys are drawn on the controller: W A S D to move, arrows to turn, K L J I for A B X Y, E and U for the bumpers, Q and O for the triggers, Z X C V for the d-pad), or click and drag the controller with the mouse. A real gamepad works too." />
+						<Inline text="**Free play** loads your code and lets you drive, once you **Enable** the robot. No controller needed: click this tab and use the keyboard (the keys are drawn on the controller: W A S D to move, arrows to turn, K L J I for A B X Y, E and U for the bumpers, Q and O for the triggers, Z X C V for the d-pad), or click and drag the controller with the mouse. A real gamepad works too." />
 					</li>
 					<li>
 						<Inline text="On the timeline, each lane is a subsystem and each bar is a command that required it. A command that needs two subsystems shows up in both. A red end means it was interrupted: hover to see by what." />

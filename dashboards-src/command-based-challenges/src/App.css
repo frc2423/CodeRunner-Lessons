@@ -1355,3 +1355,22 @@ select {
 .pad-option:first-of-type {
 	margin-left: auto;
 }
+
+.tag-warn {
+	background: color-mix(in srgb, var(--warn) 20%, transparent);
+	color: var(--warn);
+}
+
+/* Pressing buttons while they can't do anything: make the reason hard to miss. */
+.tag-flash {
+	animation: tag-flash 0.6s ease-in-out infinite alternate;
+}
+
+@keyframes tag-flash {
+	from {
+		box-shadow: 0 0 0 0 transparent;
+	}
+	to {
+		box-shadow: 0 0 0 3px color-mix(in srgb, var(--warn) 45%, transparent);
+	}
+}

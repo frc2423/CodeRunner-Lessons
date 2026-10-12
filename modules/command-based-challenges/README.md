@@ -14,7 +14,7 @@ Open the **Command Lab** tab next to AdvantageScope. Pick a challenge there to r
    - Write your code in the challenge's file.
    - Save, then click **Restart** in the Driver Station so the robot program is rebuilt with your code. The last thing you ran loads again by itself.
    - Click **Run trial** and enable the robot in the mode the challenge asks for (Teleop, or Autonomous for challenges 13 and 14). Pass every check to complete the challenge; bonus checks earn stars.
-4. Click **Free play** to drive the robot yourself. You don't need a gamepad: click the Command Lab tab and use the keyboard, or click and drag the controller drawn in the tab. **+ Piece** gives you something to pick up.
+4. Click **Free play** to drive the robot yourself, then **Enable** it in the Driver Station (commands don't run while it's disabled). You don't need a gamepad: click the Command Lab tab and use the keyboard, or click and drag the controller drawn in the tab. **+ Piece** gives you something to pick up.
 
    | Keys | Controller |
    | --- | --- |
