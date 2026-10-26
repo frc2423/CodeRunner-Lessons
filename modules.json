@@ -2,84 +2,12 @@
   "schemaVersion": 1,
   "modules": [
     {
-      "id": "hello-name",
-      "title": "Hello, Name",
-      "description": "Variables, terminal input, and printing values.",
-      "subdir": "modules/hello-name",
-      "kind": "plain-java",
-      "order": 10
-    },
-    {
-      "id": "number-guessing",
-      "title": "Number Guessing Game",
-      "description": "Random numbers, Scanner input, and simple branching.",
-      "subdir": "modules/number-guessing",
-      "kind": "plain-java",
-      "order": 20
-    },
-    {
-      "id": "perimeter-area",
-      "title": "Perimeter and Area",
-      "description": "Input, arithmetic, and shape formulas.",
-      "subdir": "modules/perimeter-area",
-      "kind": "plain-java",
-      "order": 30
-    },
-    {
       "id": "led-challenges",
       "title": "LED Challenges",
       "description": "Learn programming step by step by lighting up a robot's LED strip, from single LEDs to animations.",
       "subdir": "modules/led-challenges",
       "kind": "robot",
-      "order": 35
-    },
-    {
-      "id": "closest-distance",
-      "title": "Closest Distance",
-      "description": "Translation2d math, loops, random points, and logged field outputs.",
-      "subdir": "modules/closest-distance",
-      "kind": "robot",
-      "order": 40
-    },
-    {
-      "id": "shape-classes",
-      "title": "Perimeter and Area Part 2",
-      "description": "Move shape math into classes and log the results.",
-      "subdir": "modules/shape-classes",
-      "kind": "robot",
-      "order": 50
-    },
-    {
-      "id": "score-predictor",
-      "title": "Score Predictor",
-      "description": "Classes, arrays, averages, and a simple FRC match prediction.",
-      "subdir": "modules/score-predictor",
-      "kind": "robot",
-      "order": 60
-    },
-    {
-      "id": "timed-robot",
-      "title": "Timed Robot",
-      "description": "TimedRobot methods, loop timing, controller input, and logged values.",
-      "subdir": "modules/timed-robot",
-      "kind": "robot",
-      "order": 70
-    },
-    {
-      "id": "flywheel-dashboard",
-      "title": "Flywheel Tuning",
-      "description": "Tune a simulated flywheel with a custom dashboard: P control, feedforward, and an at-speed signal.",
-      "subdir": "modules/flywheel-dashboard",
-      "kind": "robot",
-      "order": 75
-    },
-    {
-      "id": "command-based-drive",
-      "title": "Command-Based Robot",
-      "description": "Commands, button bindings, a simple drive subsystem, and autonomous routines.",
-      "subdir": "modules/command-based-drive",
-      "kind": "robot",
-      "order": 80
+      "order": 10
     },
     {
       "id": "command-based-challenges",
@@ -87,31 +15,7 @@
       "description": "Sixteen challenges on a simulated robot: commands, triggers, interrupts, your own subsystems, and PathPlanner autos, with a live command timeline.",
       "subdir": "modules/command-based-challenges",
       "kind": "robot",
-      "order": 85
-    },
-    {
-      "id": "kitbot-controls",
-      "title": "Kitbot Controls",
-      "description": "Modify the AdvantageKit kitbot controls with fast and spin modes.",
-      "subdir": "modules/kitbot-controls",
-      "kind": "robot",
-      "order": 90
-    },
-    {
-      "id": "pid-controllers",
-      "title": "PID Controllers",
-      "description": "Add shooter and chassis aiming PID controllers to the kitbot project.",
-      "subdir": "modules/pid-controllers",
-      "kind": "robot",
-      "order": 100
-    },
-    {
-      "id": "control-theory",
-      "title": "Control Theory Challenges",
-      "description": "Fifteen control challenges on simulated FRC mechanisms, from bang-bang and PID to feedforward, motion profiles, SysId, LQR and Kalman filters.",
-      "subdir": "modules/control-theory",
-      "kind": "robot",
-      "order": 110
+      "order": 20
     }
   ]
 }
