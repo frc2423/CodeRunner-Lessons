@@ -1,0 +1,8 @@
+{
+  "dashboards": [
+    {
+      "title": "AdvantageKit Lab",
+      "entry": "dashboard/index.html"
+    }
+  ]
+}

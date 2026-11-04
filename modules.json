@@ -16,6 +16,14 @@
       "subdir": "modules/command-based-challenges",
       "kind": "robot",
       "order": 20
+    },
+    {
+      "id": "advantagekit-challenges",
+      "title": "AdvantageKit Challenges",
+      "description": "Sixteen command-based challenges on logging and log replay: outputs, inputs, IO layers, deterministic code, and solving a mystery from a match log.",
+      "subdir": "modules/advantagekit-challenges",
+      "kind": "robot",
+      "order": 30
     }
   ]
 }
