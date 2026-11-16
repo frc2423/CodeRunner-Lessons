@@ -26,7 +26,7 @@ with any source change. The tab is declared in
 
 ## How the lesson is split
 
-The robot program owns the simulation: the robot, its physics and bumps, the
+The robot program owns the simulation: the robot, its physics, the
 obstacles from code, and calling the student's `SmartSteering.steer`. The
 dashboard owns the drawn obstacles (kept in the browser's local storage and
 sent to the robot), the keyboard, and everything the student sees.
@@ -36,8 +36,7 @@ sent to the robot), the keyboard, and everything the student sees.
 | `modules/smart-steering-playground/src/main/java/frc/robot/SmartSteering.java` | The student scaffold: `steer(requested, robotPose, currentSpeeds, obstacles)`. |
 | `.../frc/robot/Obstacles.java` | The obstacles written in code (students edit it too). |
 | `.../frc/robot/playground/Playground.java` | The loop: reads the sticks and the tab, calls `steer`, steps the world, publishes. |
-| `.../frc/robot/playground/World.java` | The physics: acceleration limits, solid walls (push out and slide), passable obstacles (the robot drives through; each entry is a bump), counting bumps. |
-| `.../frc/robot/playground/Geometry.java` | Rectangle overlap/separation/distance (separating axis test); public for students. |
+| `.../frc/robot/playground/World.java` | The physics: acceleration limits and keeping the robot's center on the field. Nothing is solid and nothing detects collisions: if steering fails, the robot drives through the obstacle. |
 | `.../frc/robot/playground/Debug.java` | Lets student code draw on the tab's field and show values. |
 | `.../frc/robot/playground/DriverInput.java` | Sticks → field-relative `ChassisSpeeds`, from the Driver Station's port 0 or the tab's keyboard. |
 | `src/playground.ts` | The NetworkTables topics shared with `Playground.java`, and the hook that reads them. |
@@ -51,11 +50,10 @@ sent to the robot), the keyboard, and everything the student sees.
 | `/SmartDashboard/Playground/Keys` | dashboard → robot | The tab's keyboard as six axes in `XboxController.Axis` order (same keys as the Driver Station's keyboard mode). A non-zero axis wins over the Driver Station's joystick. |
 | `/SmartDashboard/Playground/DrawnObstacles` | dashboard → robot | Drawn obstacles, five numbers each: center X, center Y, X width, Y width, rotation (rad). Re-sent whenever the robot program (re)connects. |
 | `/SmartDashboard/Playground/SmartSteering` | dashboard → robot | Whether to call `SmartSteering.steer` at all. |
-| `/SmartDashboard/Playground/Command` | dashboard → robot | `"reset#<nonce>"` puts the robot back at the start and clears the bumps. |
+| `/SmartDashboard/Playground/Command` | dashboard → robot | `"reset#<nonce>"` puts the robot back at the start. |
 | `/Playground/Config` | robot → dashboard | JSON, published once: field and robot size, max speeds, start pose (from `PlaygroundConstants.java`). |
 | `/AdvantageKit/RealOutputs/Playground/State` | robot → dashboard | The robot packed in one array; see `toState` in `src/playground.ts` and `publish()` in `Playground.java`. |
-| `.../Playground/Obstacles` | robot → dashboard | Every obstacle except the walls, seven numbers each: the five above, 0 for code or 1 for drawn, and 1 if the robot is inside it right now (the tab paints it red). |
-| `.../Playground/Bumps` | robot → dashboard | The last 12 bumps: `[x, y, time, speed]` each. |
+| `.../Playground/Obstacles` | robot → dashboard | Every obstacle except the walls, six numbers each: the five above, then 0 for code or 1 for drawn. |
 | `.../Playground/Debug/{Shapes,Values}` | robot → dashboard | What student code drew this loop (7 numbers per shape: type, color, then up to five numbers), and `"name\tvalue"` lines. |
 | `.../Playground/{Error,ObstacleError,Time}` | robot → dashboard | Why `steer` or `Obstacles.create` failed, and the robot time (to spot a robot stuck in an endless loop). |
 | `.../Playground/{RobotPose,ModuleStates,RequestedSpeeds,SteeredSpeeds}` | robot → AdvantageScope | For studying a run in AdvantageScope. |
@@ -68,10 +66,13 @@ up before the robot moves.
 
 `reference/ReferenceSmartSteering.java` is a solution (slide along obstacles
 with a stopping-distance speed cap, brake first when the robot is already too
-fast, and don't spin a corner into anything). `reference/SteeringCalibrationTest.java`
-checks the geometry and physics, then drives scripted runs and 20 minutes of
-random driving with no steering, the student scaffold, and the reference, and
-compares bumps. Use it after changing the physics, the robot or the default
+fast, and don't spin a corner into anything). It writes its rectangle math in
+`reference/RefGeometry.java` (separating axis test), the way a student would
+have to. `reference/SteeringCalibrationTest.java` checks that math and the
+physics, then drives scripted runs and 20 minutes of random driving with no
+steering, the student scaffold, and the reference, and counts **hits**: how
+often the robot drives into an obstacle or past a wall. The playground itself
+doesn't detect hits; only this test does. Use it after changing the physics, the robot or the default
 obstacles.
 
 It is kept out of the module so students don't see the solution. To run it:
@@ -80,12 +81,12 @@ It is kept out of the module so students don't see the solution. To run it:
 mkdir -p ../../modules/smart-steering-playground/src/test/java/frc/robot/playground
 cp reference/*.java ../../modules/smart-steering-playground/src/test/java/frc/robot/playground/
 cd ../../modules/smart-steering-playground
-./gradlew test -i | grep -E "bumps|FAILED|PASSED"
+./gradlew test -i | grep -E "hits|FAILED|PASSED"
 rm -r src/test
 ```
 
-The reference should have no bumps in every scripted run, and avoid at least
-98% of the random-driving bumps (it still grazes things now and then when
+The reference should have no hits in every scripted run, and avoid at least
+95% of the random-driving hits (it still grazes things now and then when
 squeezed between two obstacles at once).
 
 ## Dev mock

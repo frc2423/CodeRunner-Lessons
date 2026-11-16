@@ -385,12 +385,6 @@ h2 {
 	fill: color-mix(in srgb, var(--orange) 70%, var(--card));
 }
 
-/* The robot is driving through it: smart steering didn't keep it out. */
-.obstacle.obstacle-hit {
-	fill: color-mix(in srgb, var(--bad) 55%, var(--card));
-	stroke: var(--bad);
-}
-
 .obstacle-selected {
 	stroke: var(--text);
 	stroke-width: 5;
@@ -414,22 +408,10 @@ h2 {
 	pointer-events: none;
 }
 
-.bump {
-	fill: none;
-	stroke: var(--bad);
-	stroke-width: 6;
-	pointer-events: none;
-}
-
 /* The robot */
 
 .robot {
 	pointer-events: none;
-}
-
-/* Inside an obstacle, see the obstacle through the robot. */
-.robot-touching .robot-body {
-	fill-opacity: 0.6;
 }
 
 .robot-body {
@@ -442,10 +424,6 @@ h2 {
 	fill: none;
 	stroke: color-mix(in srgb, var(--blue-alliance) 60%, #000);
 	stroke-width: 2;
-}
-
-.robot-touching .robot-body {
-	stroke: var(--bad);
 }
 
 .robot-arrow,

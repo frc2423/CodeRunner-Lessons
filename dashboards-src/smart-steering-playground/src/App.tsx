@@ -187,13 +187,11 @@ export default function App() {
 					state={state}
 					codeObstacles={pg.codeObstacles}
 					drawn={drawn}
-					drawnInside={pg.drawnInside}
 					selectedId={selectedId}
 					onSelect={setSelectedId}
 					onAdd={add}
 					onMove={moveTo}
 					shapes={pg.shapes}
-					bumps={pg.bumps}
 					trail={trail}
 					layers={layers}
 				/>
@@ -327,11 +325,8 @@ export default function App() {
 				</section>
 
 				<section className="card">
-					<h2>Bumps</h2>
+					<h2>Robot</h2>
 					<div className="stats">
-						<Stat label="Bumps" value={state ? String(state.bumps) : "–"} warn={(state?.bumps ?? 0) > 0} big />
-						<Stat label="Hardest bump" value={state ? `${n(state.hardestBump, 1)} m/s` : "–"} />
-						<Stat label="Inside obstacles" value={state ? `${n(state.insideTime, 1)} s` : "–"} />
 						<Stat label="Distance driven" value={state ? `${n(state.distance, 1)} m` : "–"} />
 						<Stat
 							label="steer() took"
@@ -339,9 +334,8 @@ export default function App() {
 						/>
 					</div>
 					<p className="muted">
-						Obstacles aren't solid: the robot drives right through them, and each time it drives into one counts as a
-						bump. The field walls are solid; hitting one faster than 0.25 m/s counts too. <b>Reset robot</b> clears the
-						count.
+						Obstacles aren't solid: the robot drives right through them unless your smart steering keeps it out.{" "}
+						<b>Reset robot</b> puts it back at the start.
 					</p>
 				</section>
 
@@ -373,12 +367,12 @@ export default function App() {
 					<code>steer</code> method with the speeds the driver asked for, where the robot is, how fast it's going, and
 					every obstacle (including the field walls) as a <code>Rectangle2d</code>. Whatever it returns is what the robot
 					really drives at. Make it smart: the driver drives, but the robot never ends up in an obstacle. Obstacles
-					aren't solid, so when your steering doesn't work the robot drives straight through them and they light up red.
+					aren't solid, so when your steering doesn't work the robot drives straight through them.
 				</p>
 				<ol>
 					<li>
-						<b>Look ahead.</b> Where will the robot be in a moment? Draw it with <code>Debug.rectangle</code> and check it
-						with <code>Geometry.overlaps</code>.
+						<b>Look ahead.</b> Where will the robot be in a moment? Draw it with <code>Debug.rectangle</code>, then work
+						out whether it overlaps an obstacle.
 					</li>
 					<li>
 						<b>Brake</b> before you'd hit something.

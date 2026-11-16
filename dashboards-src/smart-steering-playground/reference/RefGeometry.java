@@ -5,23 +5,19 @@ import edu.wpi.first.math.geometry.Rectangle2d;
 import edu.wpi.first.math.geometry.Translation2d;
 
 /**
- * Rectangle math that WPILib's {@link Rectangle2d} doesn't have. The playground uses these to find
- * collisions, and you're welcome to use them in {@code SmartSteering.java} too.
- *
- * <p>{@link Rectangle2d} itself can already tell you about a single point: {@code
- * rectangle.contains(point)}, {@code rectangle.getDistance(point)} and {@code
- * rectangle.nearest(point)}.
+ * Rectangle math for the reference solution and the calibration test. Kept out of the module: students
+ * write their own.
  */
-public final class Geometry {
-  private Geometry() {}
+final class RefGeometry {
+  private RefGeometry() {}
 
   /** The robot's bumpers as a rectangle, if the robot were at {@code pose}. */
-  public static Rectangle2d robotFootprint(Pose2d pose) {
+  static Rectangle2d robotFootprint(Pose2d pose) {
     return new Rectangle2d(pose, PlaygroundConstants.ROBOT_LENGTH, PlaygroundConstants.ROBOT_WIDTH);
   }
 
   /** The four corners of a rectangle, counterclockwise. Works for rotated rectangles too. */
-  public static Translation2d[] corners(Rectangle2d rectangle) {
+  static Translation2d[] corners(Rectangle2d rectangle) {
     Pose2d center = rectangle.getCenter();
     double halfX = rectangle.getXWidth() / 2;
     double halfY = rectangle.getYWidth() / 2;
@@ -34,7 +30,7 @@ public final class Geometry {
   }
 
   /** Whether two rectangles overlap. Rectangles that only touch along an edge don't count. */
-  public static boolean overlaps(Rectangle2d a, Rectangle2d b) {
+  static boolean overlaps(Rectangle2d a, Rectangle2d b) {
     return penetration(a, b) != null;
   }
 
@@ -43,7 +39,7 @@ public final class Geometry {
    * they don't overlap. Its direction is the way {@code a} would have to go to escape, which is
    * also the direction the surface of {@code b} faces where they touch.
    */
-  public static Translation2d separation(Rectangle2d a, Rectangle2d b) {
+  static Translation2d separation(Rectangle2d a, Rectangle2d b) {
     Translation2d push = penetration(a, b);
     return push == null ? Translation2d.kZero : push;
   }
@@ -51,7 +47,7 @@ public final class Geometry {
   /**
    * The gap between two rectangles: how far apart their closest points are, or 0 if they overlap.
    */
-  public static double distance(Rectangle2d a, Rectangle2d b) {
+  static double distance(Rectangle2d a, Rectangle2d b) {
     if (overlaps(a, b)) {
       return 0;
     }

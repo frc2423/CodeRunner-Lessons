@@ -16,16 +16,19 @@ import java.util.function.DoubleFunction;
 import org.junit.jupiter.api.Test;
 
 /**
- * Checks the playground's physics and that the task is solvable: drives scripted runs with no
- * steering, the student scaffold, and the reference solution, and compares bumps. See the
- * dashboard README for how to run it.
+ * Checks that the task is solvable: drives scripted runs with no steering, the student scaffold,
+ * and the reference solution, and counts how often the robot drives into an obstacle or past a
+ * field wall. The playground itself doesn't detect that (nothing is solid), so the counting is
+ * done here with {@link RefGeometry}. See the dashboard README for how to run it.
  */
 class SteeringCalibrationTest {
   interface Steering {
-    ChassisSpeeds steer(ChassisSpeeds requested, Pose2d pose, ChassisSpeeds current, List<Rectangle2d> obstacles);
+    ChassisSpeeds steer(
+        ChassisSpeeds requested, Pose2d pose, ChassisSpeeds current, List<Rectangle2d> obstacles);
   }
 
-  record Run(World world, double minGap) {}
+  /** A finished run: where the robot ended up, how often it hit something, and its closest call. */
+  record Run(World world, int hits, double minGap) {}
 
   static List<Rectangle2d> obstacles() {
     List<Rectangle2d> all = new ArrayList<>(Obstacles.create());
@@ -33,24 +36,33 @@ class SteeringCalibrationTest {
     return all;
   }
 
-  static Run drive(Pose2d start, double seconds, DoubleFunction<ChassisSpeeds> driver, Steering steering) {
-    // Steering sees the walls too; the world only needs the (passable) obstacles.
+  static Run drive(
+      Pose2d start, double seconds, DoubleFunction<ChassisSpeeds> driver, Steering steering) {
     List<Rectangle2d> obstacles = obstacles();
-    List<Rectangle2d> passable = Obstacles.create();
     World world = new World();
     world.reset(start);
+    boolean[] insideLast = new boolean[obstacles.size()];
+    int hits = 0;
     double minGap = Double.POSITIVE_INFINITY;
     for (double t = 0; t < seconds; t += PlaygroundConstants.LOOP_PERIOD) {
       ChassisSpeeds requested = driver.apply(t);
       Debug.clear();
       ChassisSpeeds out =
-          steering == null ? requested : steering.steer(requested, world.pose(), world.fieldSpeeds(), obstacles);
-      world.step(out, passable);
-      for (Rectangle2d obstacle : obstacles) {
-        minGap = Math.min(minGap, Geometry.distance(world.footprint(), obstacle));
+          steering == null
+              ? requested
+              : steering.steer(requested, world.pose(), world.fieldSpeeds(), obstacles);
+      world.step(out);
+      Rectangle2d robot = RefGeometry.robotFootprint(world.pose());
+      for (int i = 0; i < obstacles.size(); i++) {
+        boolean inside = RefGeometry.overlaps(robot, obstacles.get(i));
+        if (inside && !insideLast[i]) {
+          hits++;
+        }
+        insideLast[i] = inside;
+        minGap = Math.min(minGap, RefGeometry.distance(robot, obstacles.get(i)));
       }
     }
-    return new Run(world, minGap);
+    return new Run(world, hits, minGap);
   }
 
   static final Steering NONE = null;
@@ -59,120 +71,135 @@ class SteeringCalibrationTest {
 
   static void report(String name, Run none, Run scaffold, Run reference) {
     System.out.printf(
-        "%-28s none: %2d bumps | scaffold: %2d bumps | reference: %2d bumps, min gap %.3f m, ended at (%.2f, %.2f), drove %.1f m%n",
+        "%-24s none: %2d hits | scaffold: %2d hits | reference: %2d hits, min gap %.3f m, ended at"
+            + " (%.2f, %.2f), drove %.1f m%n",
         name,
-        none.world().bumps(),
-        scaffold.world().bumps(),
-        reference.world().bumps(),
+        none.hits(),
+        scaffold.hits(),
+        reference.hits(),
         reference.minGap(),
         reference.world().pose().getX(),
         reference.world().pose().getY(),
         reference.world().distance());
   }
 
-  // Geometry ---------------------------------------------------------------------------------------
+  // RefGeometry ------------------------------------------------------------------------------------
 
   @Test
   void geometry() {
     Rectangle2d a = new Rectangle2d(new Translation2d(0, 0), new Translation2d(1, 1));
     Rectangle2d b = new Rectangle2d(new Translation2d(0.9, 0.2), new Translation2d(2, 0.8));
-    assertTrue(Geometry.overlaps(a, b));
-    Translation2d push = Geometry.separation(a, b);
+    assertTrue(RefGeometry.overlaps(a, b));
+    Translation2d push = RefGeometry.separation(a, b);
     assertEquals(-0.1, push.getX(), 1e-9);
     assertEquals(0, push.getY(), 1e-9);
     Rectangle2d c = new Rectangle2d(new Translation2d(3, 0), new Translation2d(4, 1));
-    assertFalse(Geometry.overlaps(a, c));
-    assertEquals(2, Geometry.distance(a, c), 1e-9);
+    assertFalse(RefGeometry.overlaps(a, c));
+    assertEquals(2, RefGeometry.distance(a, c), 1e-9);
     Rectangle2d diamond = new Rectangle2d(new Pose2d(2.5, 0.5, Rotation2d.fromDegrees(45)), 1, 1);
-    assertEquals(1.5 - Math.sqrt(0.5), Geometry.distance(a, diamond), 1e-9);
+    assertEquals(1.5 - Math.sqrt(0.5), RefGeometry.distance(a, diamond), 1e-9);
     // Touching edges don't overlap.
     Rectangle2d d = new Rectangle2d(new Translation2d(1, 0), new Translation2d(2, 1));
-    assertFalse(Geometry.overlaps(a, d));
+    assertFalse(RefGeometry.overlaps(a, d));
   }
 
-  // Physics ----------------------------------------------------------------------------------------
+  // The playground's physics -----------------------------------------------------------------------
 
   @Test
   void robotDrivesThroughObstacles() {
-    // Straight through the long obstacle at x 4.5 to 5.0: one bump, and out the other side.
+    // Straight through the long obstacle at x 4.5 to 5.0 and out the other side.
     Run run = drive(PlaygroundConstants.START_POSE, 1.5, t -> new ChassisSpeeds(4.5, 0, 0), NONE);
     double back = run.world().pose().getX() - PlaygroundConstants.ROBOT_LENGTH / 2;
-    System.out.printf("Through the long obstacle, no steering: back at %.3f, %d bumps%n", back, run.world().bumps());
+    System.out.printf("Through the long obstacle: back at %.3f, %d hits%n", back, run.hits());
     assertTrue(back > 5.0, "should come out the other side");
-    assertEquals(1, run.world().bumps());
-    assertFalse(run.world().touching());
-    assertTrue(run.world().insideTime() > 0.1);
+    assertEquals(1, run.hits());
   }
 
   @Test
-  void obstacleFlagsWhileInside() {
-    Run run = drive(PlaygroundConstants.START_POSE, 0.95, t -> new ChassisSpeeds(4.5, 0, 0), NONE);
-    boolean[] inside = run.world().inside();
-    System.out.printf("Partway into the long obstacle: x %.2f, inside %s%n", run.world().pose().getX(), java.util.Arrays.toString(inside));
-    assertTrue(inside[0], "should be inside the long obstacle");
-    assertTrue(run.world().touching());
+  void robotStaysOnTheField() {
+    Run run = drive(PlaygroundConstants.START_POSE, 2, t -> new ChassisSpeeds(-4.5, -4.5, 0), NONE);
+    Pose2d pose = run.world().pose();
+    System.out.printf("Into the corner: (%.3f, %.3f)%n", pose.getX(), pose.getY());
+    assertEquals(PlaygroundConstants.ROBOT_WIDTH / 2, pose.getX(), 1e-9);
+    assertEquals(PlaygroundConstants.ROBOT_WIDTH / 2, pose.getY(), 1e-9);
+    assertEquals(0, run.world().fieldSpeeds().vxMetersPerSecond, 1e-9);
   }
 
   @Test
-  void wallsAreSolid() {
-    Run run = drive(PlaygroundConstants.START_POSE, 2, t -> new ChassisSpeeds(-4.5, 0, 0), NONE);
-    double back = run.world().pose().getX() - PlaygroundConstants.ROBOT_LENGTH / 2;
-    System.out.printf("Into the blue wall, no steering: back at %.3f, %d bumps%n", back, run.world().bumps());
-    assertEquals(0, back, 0.01);
-    assertEquals(1, run.world().bumps());
-    assertTrue(run.world().touching());
-  }
-
-  @Test
-  void robotSlidesAlongWalls() {
-    Run run = drive(new Pose2d(2, 2, Rotation2d.kZero), 2, t -> new ChassisSpeeds(2, -3, 0), NONE);
-    System.out.printf("Diagonal into the bottom wall, no steering: (%.2f, %.2f)%n", run.world().pose().getX(), run.world().pose().getY());
-    assertEquals(PlaygroundConstants.ROBOT_WIDTH / 2, run.world().pose().getY(), 0.01);
-    assertTrue(run.world().pose().getX() > 5.5, "should slide along the wall");
-  }
-
-  @Test
-  void spinningInACornerDoesntEscape() {
-    Pose2d corner = new Pose2d(0.5, 0.5, Rotation2d.kZero);
-    Run run = drive(corner, 5, t -> new ChassisSpeeds(-2, -2, 4), NONE);
-    Rectangle2d field =
-        new Rectangle2d(
-            new Translation2d(0, 0),
-            new Translation2d(PlaygroundConstants.FIELD_LENGTH, PlaygroundConstants.FIELD_WIDTH));
-    for (Translation2d c : Geometry.corners(run.world().footprint())) {
-      assertTrue(field.getDistance(c) < 0.02, "corner left the field: " + c);
-    }
+  void accelerationIsLimited() {
+    World world = new World();
+    world.step(new ChassisSpeeds(4.5, 0, 0));
+    assertEquals(
+        PlaygroundConstants.MAX_ACCELERATION * PlaygroundConstants.LOOP_PERIOD,
+        world.fieldSpeeds().vxMetersPerSecond,
+        1e-9);
   }
 
   // Steering ---------------------------------------------------------------------------------------
 
   @Test
   void steeringScenarios() {
-    record Scenario(String name, Pose2d start, double seconds, DoubleFunction<ChassisSpeeds> driver) {}
+    record Scenario(
+        String name, Pose2d start, double seconds, DoubleFunction<ChassisSpeeds> driver) {}
     List<Scenario> scenarios =
         List.of(
-            new Scenario("straight at the wall", PlaygroundConstants.START_POSE, 4, t -> new ChassisSpeeds(4.5, 0, 0)),
-            new Scenario("diagonal at the wall", PlaygroundConstants.START_POSE, 4, t -> new ChassisSpeeds(3.2, 3.2, 0)),
-            new Scenario("into a field corner", new Pose2d(2, 2, Rotation2d.kZero), 3, t -> new ChassisSpeeds(-3, -3, 0)),
-            new Scenario("spinning along a wall", new Pose2d(2, 0.6, Rotation2d.kZero), 4, t -> new ChassisSpeeds(3, -1, 3)),
-            new Scenario("at the tilted barrier", new Pose2d(12, 3.1, Rotation2d.kZero), 3, t -> new ChassisSpeeds(0, 4.5, 0)),
-            new Scenario("through the gap", new Pose2d(10.5, 3.1, Rotation2d.kZero), 3, t -> new ChassisSpeeds(3, 0, 0)),
-            new Scenario("back off the wall", new Pose2d(3.6, 4, Rotation2d.kZero), 2, t -> new ChassisSpeeds(t < 1 ? 4 : -4, 0, 0)));
-    int referenceBumps = 0;
+            new Scenario(
+                "straight at the wall",
+                PlaygroundConstants.START_POSE,
+                4,
+                t -> new ChassisSpeeds(4.5, 0, 0)),
+            new Scenario(
+                "diagonal at the wall",
+                PlaygroundConstants.START_POSE,
+                4,
+                t -> new ChassisSpeeds(3.2, 3.2, 0)),
+            new Scenario(
+                "into a field corner",
+                new Pose2d(2, 2, Rotation2d.kZero),
+                3,
+                t -> new ChassisSpeeds(-3, -3, 0)),
+            new Scenario(
+                "spinning along a wall",
+                new Pose2d(2, 0.6, Rotation2d.kZero),
+                4,
+                t -> new ChassisSpeeds(3, -1, 3)),
+            new Scenario(
+                "at the tilted barrier",
+                new Pose2d(12, 3.1, Rotation2d.kZero),
+                3,
+                t -> new ChassisSpeeds(0, 4.5, 0)),
+            new Scenario(
+                "through the gap",
+                new Pose2d(10.5, 3.1, Rotation2d.kZero),
+                3,
+                t -> new ChassisSpeeds(3, 0, 0)),
+            new Scenario(
+                "back off the wall",
+                new Pose2d(3.6, 4, Rotation2d.kZero),
+                2,
+                t -> new ChassisSpeeds(t < 1 ? 4 : -4, 0, 0)));
+    int referenceHits = 0;
     for (Scenario s : scenarios) {
       Run none = drive(s.start(), s.seconds(), s.driver(), NONE);
       Run scaffold = drive(s.start(), s.seconds(), s.driver(), SCAFFOLD);
       Run reference = drive(s.start(), s.seconds(), s.driver(), REFERENCE);
       report(s.name(), none, scaffold, reference);
-      referenceBumps += reference.world().bumps();
+      referenceHits += reference.hits();
     }
-    assertEquals(0, referenceBumps);
+    assertEquals(0, referenceHits);
 
     // Smart steering mustn't trap the robot: straight at the wall, then straight back.
-    Run back = drive(new Pose2d(3.6, 4, Rotation2d.kZero), 2, t -> new ChassisSpeeds(t < 1 ? 4 : -4, 0, 0), REFERENCE);
+    Run back =
+        drive(
+            new Pose2d(3.6, 4, Rotation2d.kZero),
+            2,
+            t -> new ChassisSpeeds(t < 1 ? 4 : -4, 0, 0),
+            REFERENCE);
     assertTrue(back.world().pose().getX() < 3.0, "should drive back away from the wall");
     // Diagonal at the wall should slide, not stop.
-    Run slide = drive(PlaygroundConstants.START_POSE, 4, t -> new ChassisSpeeds(3.2, 3.2, 0), REFERENCE);
+    Run slide =
+        drive(
+            PlaygroundConstants.START_POSE, 4, t -> new ChassisSpeeds(3.2, 3.2, 0), REFERENCE);
     assertTrue(slide.world().pose().getY() > 6.5, "should slide along the wall");
   }
 
@@ -181,14 +208,14 @@ class SteeringCalibrationTest {
     int none = 0;
     int reference = 0;
     for (int seed = 0; seed < 20; seed++) {
-      DoubleFunction<ChassisSpeeds> driver = randomDriver(seed);
-      none += drive(PlaygroundConstants.START_POSE, 60, driver, NONE).world().bumps();
-      reference += drive(PlaygroundConstants.START_POSE, 60, randomDriver(seed), REFERENCE).world().bumps();
+      none += drive(PlaygroundConstants.START_POSE, 60, randomDriver(seed), NONE).hits();
+      reference += drive(PlaygroundConstants.START_POSE, 60, randomDriver(seed), REFERENCE).hits();
     }
-    System.out.printf("Random driving, 20 minutes: no steering %d bumps, reference %d bumps%n", none, reference);
-    assertTrue(none > 500);
+    System.out.printf(
+        "Random driving, 20 minutes: no steering %d hits, reference %d hits%n", none, reference);
+    assertTrue(none > 300);
     // The reference still grazes things now and then when squeezed between two obstacles at once.
-    assertTrue(reference <= none / 50, "reference should avoid at least 98% of the bumps");
+    assertTrue(reference <= none / 20, "reference should avoid at least 95% of the hits");
   }
 
   static DoubleFunction<ChassisSpeeds> randomDriver(long seed) {

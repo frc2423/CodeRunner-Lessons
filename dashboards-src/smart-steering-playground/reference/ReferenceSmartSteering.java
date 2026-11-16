@@ -36,7 +36,7 @@ public class ReferenceSmartSteering {
       Pose2d robotPose,
       ChassisSpeeds currentSpeeds,
       List<Rectangle2d> obstacles) {
-    Rectangle2d robot = Geometry.robotFootprint(robotPose);
+    Rectangle2d robot = RefGeometry.robotFootprint(robotPose);
     double vx = requested.vxMetersPerSecond;
     double vy = requested.vyMetersPerSecond;
     double cx = currentSpeeds.vxMetersPerSecond;
@@ -46,7 +46,7 @@ public class ReferenceSmartSteering {
     double worstExcess = 0;
     for (int pass = 0; pass < 3; pass++) {
       for (Rectangle2d obstacle : obstacles) {
-        double gap = Geometry.distance(robot, obstacle);
+        double gap = RefGeometry.distance(robot, obstacle);
         if (gap > LOOK) {
           continue;
         }
@@ -114,11 +114,11 @@ public class ReferenceSmartSteering {
     Pose2d slid = new Pose2d(pose.getX() + vx * ahead, pose.getY() + vy * ahead, pose.getRotation());
     Pose2d spun =
         new Pose2d(slid.getTranslation(), pose.getRotation().plus(Rotation2d.fromRadians(turn)));
-    Rectangle2d slidFootprint = Geometry.robotFootprint(slid);
-    Rectangle2d spunFootprint = Geometry.robotFootprint(spun);
+    Rectangle2d slidFootprint = RefGeometry.robotFootprint(slid);
+    Rectangle2d spunFootprint = RefGeometry.robotFootprint(spun);
     for (Rectangle2d obstacle : obstacles) {
-      double spunGap = Geometry.distance(spunFootprint, obstacle);
-      if (spunGap < MARGIN && spunGap <= Geometry.distance(slidFootprint, obstacle)) {
+      double spunGap = RefGeometry.distance(spunFootprint, obstacle);
+      if (spunGap < MARGIN && spunGap <= RefGeometry.distance(slidFootprint, obstacle)) {
         return 0;
       }
     }
@@ -131,12 +131,12 @@ public class ReferenceSmartSteering {
       // Touching: grow the robot a little and see which way it would be pushed out.
       Rectangle2d bigger =
           new Rectangle2d(robot.getCenter(), robot.getXWidth() + 0.02, robot.getYWidth() + 0.02);
-      Translation2d push = Geometry.separation(bigger, obstacle);
+      Translation2d push = RefGeometry.separation(bigger, obstacle);
       return push.getNorm() < 1e-9 ? null : push.div(push.getNorm());
     }
     Translation2d best = null;
     double bestDistance = Double.POSITIVE_INFINITY;
-    for (Translation2d corner : Geometry.corners(robot)) {
+    for (Translation2d corner : RefGeometry.corners(robot)) {
       Translation2d near = obstacle.nearest(corner);
       double d = corner.getDistance(near);
       if (d < bestDistance) {
@@ -144,7 +144,7 @@ public class ReferenceSmartSteering {
         best = corner.minus(near);
       }
     }
-    for (Translation2d corner : Geometry.corners(obstacle)) {
+    for (Translation2d corner : RefGeometry.corners(obstacle)) {
       Translation2d near = robot.nearest(corner);
       double d = corner.getDistance(near);
       if (d < bestDistance) {

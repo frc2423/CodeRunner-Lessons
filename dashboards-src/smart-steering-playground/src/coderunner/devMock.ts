@@ -5,7 +5,7 @@ import type { CodeRunnerApi, CodeRunnerContext, NTEntry, NTTopicInfo, Unsubscrib
  * A stand-in `window.coderunner` for `bun run dev` outside CodeRunner.
  *
  * It keeps NetworkTables values in memory and plays a rough copy of
- * Playground.java: the same robot physics and bumping, the obstacles from the
+ * Playground.java: the same robot physics, the obstacles from the
  * lesson's starting Obstacles.java, and the starting SmartSteering.java (which
  * changes nothing). Drive it with the keyboard. Only installed in development,
  * and only when CodeRunner didn't inject the real API.
@@ -73,14 +73,6 @@ export function installDevMock(): void {
 		fromCorners(12.0, 0.0, 12.8, 2.6),
 		fromCorners(12.0, 3.6, 12.8, 4.4),
 	];
-	const T = 1;
-	const walls: Rect[] = [
-		{ cx: C.fieldLength / 2, cy: -T / 2, xw: C.fieldLength + 2 * T, yw: T, rot: 0 },
-		{ cx: C.fieldLength / 2, cy: C.fieldWidth + T / 2, xw: C.fieldLength + 2 * T, yw: T, rot: 0 },
-		{ cx: -T / 2, cy: C.fieldWidth / 2, xw: T, yw: C.fieldWidth + 2 * T, rot: 0 },
-		{ cx: C.fieldLength + T / 2, cy: C.fieldWidth / 2, xw: T, yw: C.fieldWidth + 2 * T, rot: 0 },
-	];
-
 	let time = 0;
 	let x = C.startX;
 	let y = C.startY;
@@ -88,13 +80,8 @@ export function installDevMock(): void {
 	let vx = 0;
 	let vy = 0;
 	let omega = 0;
-	let bumps = 0;
-	let hardest = 0;
-	let insideTime = 0;
 	let distance = 0;
 	let resets = 1;
-	let touchingLast = new Set<Rect>();
-	let recent: number[][] = [];
 	let lastCommand = "";
 
 	const reset = () => {
@@ -102,16 +89,9 @@ export function installDevMock(): void {
 		y = C.startY;
 		heading = C.startHeading;
 		vx = vy = omega = 0;
-		bumps = 0;
-		hardest = 0;
-		insideTime = 0;
 		distance = 0;
-		touchingLast = new Set();
-		recent = [];
 		resets++;
 	};
-
-	const footprint = (): Rect => ({ cx: x, cy: y, xw: C.robotLength, yw: C.robotWidth, rot: heading });
 
 	window.setInterval(() => {
 		const command = get(`${SD}/Command`, "");
@@ -126,7 +106,7 @@ export function installDevMock(): void {
 		for (let i = 0; i + 5 <= drawnFlat.length; i += 5) {
 			drawn.push({ cx: drawnFlat[i], cy: drawnFlat[i + 1], xw: drawnFlat[i + 2], yw: drawnFlat[i + 3], rot: drawnFlat[i + 4] });
 		}
-		const obstacles = [...codeObstacles, ...drawn, ...walls];
+		const obstacles = [...codeObstacles, ...drawn];
 		const driving = !flags.mockDisabled;
 
 		// The sticks, like DriverInput.java.
@@ -146,8 +126,7 @@ export function installDevMock(): void {
 				}
 			: { vx: 0, vy: 0, omega: 0 };
 
-		// The starting SmartSteering.java: changes nothing, shows two values.
-		const closest = Math.min(...obstacles.map((o) => rectDistance(footprint(), o)));
+		// The starting SmartSteering.java: changes nothing, shows one value.
 		const steered = { ...req };
 
 		// World.java
@@ -167,66 +146,31 @@ export function installDevMock(): void {
 		x += vx * DT;
 		y += vy * DT;
 		heading = Math.atan2(Math.sin(heading + omega * DT), Math.cos(heading + omega * DT));
-		// Walls are solid; obstacles aren't (the robot drives through, and each entry is a bump).
-		const bump = (o: Rect, speed: number) => {
-			bumps++;
-			hardest = Math.max(hardest, speed);
-			const [bx, by] = nearest(o, x, y);
-			recent = [...recent.slice(-11), [bx, by, time, speed]];
-		};
-		const touchingNow = new Set<Rect>();
-		for (let pass = 0; pass < 4; pass++) {
-			let moved = false;
-			for (const o of walls) {
-				const push = penetration(footprint(), o);
-				if (!push) continue;
-				moved = true;
-				touchingNow.add(o);
-				const len = Math.hypot(push[0], push[1]);
-				const nx = push[0] / len;
-				const ny = push[1] / len;
-				x += push[0] + nx * 1e-6;
-				y += push[1] + ny * 1e-6;
-				const into = vx * nx + vy * ny;
-				if (into < 0) {
-					if (!touchingLast.has(o) && -into > 0.25) bump(o, -into);
-					vx -= into * nx;
-					vy -= into * ny;
-				}
-			}
-			if (!moved) break;
+		// Nothing is solid; the robot's center just stays on the field.
+		const margin = C.robotWidth / 2;
+		if (x < margin || x > C.fieldLength - margin) {
+			x = Math.max(margin, Math.min(C.fieldLength - margin, x));
+			vx = 0;
 		}
-		for (const o of walls) if (!touchingNow.has(o) && rectDistance(footprint(), o) < 1e-4) touchingNow.add(o);
-		const passable = [...codeObstacles, ...drawn];
-		const inside = passable.map((o) => penetration(footprint(), o) !== null);
-		passable.forEach((o, i) => {
-			if (!inside[i]) return;
-			touchingNow.add(o);
-			if (!touchingLast.has(o)) bump(o, Math.hypot(vx, vy));
-		});
-		if (inside.some(Boolean)) insideTime += DT;
-		touchingLast = touchingNow;
+		if (y < margin || y > C.fieldWidth - margin) {
+			y = Math.max(margin, Math.min(C.fieldWidth - margin, y));
+			vy = 0;
+		}
 		distance += Math.hypot(x - x0, y - y0);
 
 		const error = flags.mockError ?? "";
 		put(`${OUT}/Time`, "double", time);
 		put(`${OUT}/State`, "double[]", [
 			time, x, y, heading, vx, vy, omega, req.vx, req.vy, req.omega, steered.vx, steered.vy, steered.omega,
-			driving ? 1 : 0, smartOn ? 1 : 0, bumps, touchingNow.size > 0 ? 1 : 0, smartOn ? 12 : 0, resets, insideTime,
-			distance, hardest, keys[0] ?? 0, keys[1] ?? 0, keys[4] ?? 0,
+			driving ? 1 : 0, smartOn ? 1 : 0, smartOn ? 12 : 0, resets, distance, keys[0] ?? 0, keys[1] ?? 0, keys[4] ?? 0,
 		]);
 		put(
 			`${OUT}/Obstacles`,
 			"double[]",
-			passable.flatMap((o, i) => [o.cx, o.cy, o.xw, o.yw, o.rot, i < codeObstacles.length ? 0 : 1, inside[i] ? 1 : 0]),
+			obstacles.flatMap((o, i) => [o.cx, o.cy, o.xw, o.yw, o.rot, i < codeObstacles.length ? 0 : 1]),
 		);
-		put(`${OUT}/Bumps`, "double[]", recent.flat());
-		put(`${OUT}/Debug/Shapes`, "double[]", smartOn ? [2, 0, x + req.vx * 0.5, y + req.vy * 0.5, C.robotLength, C.robotWidth, heading] : []);
-		put(
-			`${OUT}/Debug/Values`,
-			"string[]",
-			smartOn ? [`Requested speed (m/s)\t${Math.hypot(req.vx, req.vy).toFixed(3)}`, `Closest obstacle (m)\t${closest.toFixed(3)}`] : [],
-		);
+		put(`${OUT}/Debug/Shapes`, "double[]", []);
+		put(`${OUT}/Debug/Values`, "string[]", smartOn ? [`Requested speed (m/s)\t${Math.hypot(req.vx, req.vy).toFixed(3)}`] : []);
 		put(`${OUT}/Error`, "string", smartOn ? error : "");
 		put(`${OUT}/ObstacleError`, "string", "");
 	}, DT * 1000);
@@ -276,64 +220,4 @@ export function installDevMock(): void {
 
 	window.coderunner = mock;
 	console.info("[coderunner] Not running inside CodeRunner: using an in-memory mock of the playground.");
-}
-
-// Rectangle math, like Geometry.java ---------------------------------------------
-
-function corners({ cx, cy, xw, yw, rot }: Rect): [number, number][] {
-	const c = Math.cos(rot);
-	const s = Math.sin(rot);
-	return [
-		[xw / 2, yw / 2],
-		[-xw / 2, yw / 2],
-		[-xw / 2, -yw / 2],
-		[xw / 2, -yw / 2],
-	].map(([x, y]) => [cx + x * c - y * s, cy + x * s + y * c]);
-}
-
-/** The shortest push that moves a out of b, or null if they don't overlap. */
-function penetration(a: Rect, b: Rect): [number, number] | null {
-	const ca = corners(a);
-	const cb = corners(b);
-	const axes = [a.rot, a.rot + Math.PI / 2, b.rot, b.rot + Math.PI / 2].map((r) => [Math.cos(r), Math.sin(r)]);
-	let best = Number.POSITIVE_INFINITY;
-	let push: [number, number] = [0, 0];
-	for (const [ax, ay] of axes) {
-		const pa = ca.map(([x, y]) => x * ax + y * ay);
-		const pb = cb.map(([x, y]) => x * ax + y * ay);
-		const [minA, maxA, minB, maxB] = [Math.min(...pa), Math.max(...pa), Math.min(...pb), Math.max(...pb)];
-		const overlap = Math.min(maxA, maxB) - Math.max(minA, minB);
-		if (overlap <= 1e-9) return null;
-		if (overlap < best) {
-			best = overlap;
-			const sign = minA + maxA >= minB + maxB ? 1 : -1;
-			push = [ax * sign * overlap, ay * sign * overlap];
-		}
-	}
-	return push;
-}
-
-/** The closest point of a rectangle to (x, y). */
-function nearest(r: Rect, x: number, y: number): [number, number] {
-	const c = Math.cos(r.rot);
-	const s = Math.sin(r.rot);
-	const lx = (x - r.cx) * c + (y - r.cy) * s;
-	const ly = -(x - r.cx) * s + (y - r.cy) * c;
-	const qx = Math.max(-r.xw / 2, Math.min(r.xw / 2, lx));
-	const qy = Math.max(-r.yw / 2, Math.min(r.yw / 2, ly));
-	return [r.cx + qx * c - qy * s, r.cy + qx * s + qy * c];
-}
-
-function rectDistance(a: Rect, b: Rect): number {
-	if (penetration(a, b)) return 0;
-	let best = Number.POSITIVE_INFINITY;
-	for (const [x, y] of corners(a)) {
-		const [nx, ny] = nearest(b, x, y);
-		best = Math.min(best, Math.hypot(x - nx, y - ny));
-	}
-	for (const [x, y] of corners(b)) {
-		const [nx, ny] = nearest(a, x, y);
-		best = Math.min(best, Math.hypot(x - nx, y - ny));
-	}
-	return best;
 }

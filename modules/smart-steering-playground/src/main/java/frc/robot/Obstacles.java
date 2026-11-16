@@ -8,9 +8,9 @@ import java.util.List;
 
 /**
  * The obstacles on the field, written in code. They show up on the Playground tab in gray. They
- * aren't solid: the robot can drive through them, and each time it does counts as a bump. You can
- * also draw obstacles on the tab with the mouse (they show up in orange), and <b>Copy as code</b>
- * turns the ones you drew into lines you can paste in here.
+ * aren't solid: the robot drives straight through them unless your smart steering keeps it out. You
+ * can also draw obstacles on the tab with the mouse (they show up in orange), and <b>Copy as
+ * code</b> turns the ones you drew into lines you can paste in here.
  *
  * <p>A {@link Rectangle2d} can be made two ways:
  *

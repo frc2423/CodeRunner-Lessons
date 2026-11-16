@@ -55,9 +55,9 @@ public class Playground {
   private final List<Rectangle2d> walls = World.walls();
   private List<Rectangle2d> codeObstacles = List.of();
   private List<Rectangle2d> drawnObstacles = List.of();
-  /** Obstacles from code and the tab: the robot can drive through these. */
+  /** Obstacles from code and the tab. */
   private List<Rectangle2d> obstacles = List.of();
-  /** {@link #obstacles} plus the (solid) walls: what SmartSteering gets. */
+  /** {@link #obstacles} plus the field walls: what SmartSteering gets. */
   private List<Rectangle2d> allObstacles = List.of();
 
   private double[] lastDrawn = new double[0];
@@ -154,7 +154,7 @@ public class Playground {
       steeringError = "";
     }
 
-    world.step(driving ? steered : new ChassisSpeeds(), obstacles);
+    world.step(driving ? steered : new ChassisSpeeds());
     publish();
   }
 
@@ -231,44 +231,26 @@ public class Playground {
           steered.omegaRadiansPerSecond,
           DriverStation.isTeleopEnabled() ? 1 : 0,
           smartOn ? 1 : 0,
-          world.bumps(),
-          world.touching() ? 1 : 0,
           steerMicros,
           world.resets(),
-          world.insideTime(),
           world.distance(),
-          world.hardestBump(),
           sticks[0],
           sticks[1],
           sticks[2],
         });
 
-    // Seven numbers per obstacle: the rectangle, 0 (code) or 1 (drawn), and 1 if the robot is in
-    // it.
-    boolean[] inside = world.inside();
-    double[] obstacleData = new double[obstacles.size() * 7];
+    // Six numbers per obstacle: the rectangle, then 0 (from code) or 1 (drawn on the tab).
+    double[] obstacleData = new double[obstacles.size() * 6];
     for (int i = 0; i < obstacles.size(); i++) {
       Rectangle2d obstacle = obstacles.get(i);
-      obstacleData[i * 7] = obstacle.getCenter().getX();
-      obstacleData[i * 7 + 1] = obstacle.getCenter().getY();
-      obstacleData[i * 7 + 2] = obstacle.getXWidth();
-      obstacleData[i * 7 + 3] = obstacle.getYWidth();
-      obstacleData[i * 7 + 4] = obstacle.getRotation().getRadians();
-      obstacleData[i * 7 + 5] = i < codeObstacles.size() ? 0 : 1;
-      obstacleData[i * 7 + 6] = i < inside.length && inside[i] ? 1 : 0;
+      obstacleData[i * 6] = obstacle.getCenter().getX();
+      obstacleData[i * 6 + 1] = obstacle.getCenter().getY();
+      obstacleData[i * 6 + 2] = obstacle.getXWidth();
+      obstacleData[i * 6 + 3] = obstacle.getYWidth();
+      obstacleData[i * 6 + 4] = obstacle.getRotation().getRadians();
+      obstacleData[i * 6 + 5] = i < codeObstacles.size() ? 0 : 1;
     }
     Logger.recordOutput("Playground/Obstacles", obstacleData);
-
-    List<World.Bump> bumps = world.recentBumps();
-    double[] bumpData = new double[bumps.size() * 4];
-    for (int b = 0; b < bumps.size(); b++) {
-      World.Bump bump = bumps.get(b);
-      bumpData[b * 4] = bump.x();
-      bumpData[b * 4 + 1] = bump.y();
-      bumpData[b * 4 + 2] = bump.time();
-      bumpData[b * 4 + 3] = bump.speed();
-    }
-    Logger.recordOutput("Playground/Bumps", bumpData);
     Logger.recordOutput("Playground/Debug/Shapes", Debug.shapes());
     Logger.recordOutput("Playground/Debug/Values", Debug.values());
     Logger.recordOutput("Playground/Error", steeringError);

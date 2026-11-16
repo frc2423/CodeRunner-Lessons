@@ -1,5 +1,5 @@
 import { type PointerEvent, useRef, useState } from "react";
-import type { Bump, CodeObstacle, Config, DrawnObstacle, Rect, RobotState, Shape, Speeds } from "../playground";
+import type { Config, DrawnObstacle, Rect, RobotState, Shape, Speeds } from "../playground";
 
 /** 100 SVG units per meter; SVG y grows downward, field y grows upward. */
 const S = 100;
@@ -15,16 +15,13 @@ export type Layers = { arrows: boolean; trail: boolean; debug: boolean };
 type Props = {
 	config: Config;
 	state: RobotState | undefined;
-	codeObstacles: CodeObstacle[];
+	codeObstacles: Rect[];
 	drawn: DrawnObstacle[];
-	/** For each drawn obstacle, in order: whether the robot is inside it. */
-	drawnInside: boolean[];
 	selectedId: string | null;
 	onSelect(id: string | null): void;
 	onAdd(rect: Rect): void;
 	onMove(id: string, cx: number, cy: number): void;
 	shapes: Shape[];
-	bumps: Bump[];
 	trail: [number, number][];
 	layers: Layers;
 };
@@ -55,7 +52,7 @@ const fmt = (v: number) => (Math.round(v * 100) / 100).toFixed(2);
  * Drag on an empty spot to draw an obstacle; drag a drawn one to move it.
  */
 export function FieldView(props: Props) {
-	const { config, state, codeObstacles, drawn, drawnInside, selectedId, onSelect, onAdd, onMove, shapes, bumps, trail, layers } =
+	const { config, state, codeObstacles, drawn, selectedId, onSelect, onAdd, onMove, shapes, trail, layers } =
 		props;
 	const L = config.fieldLength;
 	const W = config.fieldWidth;
@@ -131,9 +128,7 @@ export function FieldView(props: Props) {
 		x: config.startX,
 		y: config.startY,
 		heading: config.startHeading,
-		touching: false,
 	};
-	const now = state?.time ?? 0;
 	const preview =
 		drag?.kind === "draw"
 			? {
@@ -185,26 +180,23 @@ export function FieldView(props: Props) {
 			</text>
 
 			{/* Obstacles from Obstacles.java. */}
-			{/* They light up red while the robot drives through them. */}
 			{codeObstacles.map((rect, i) => (
-				<polygon
-					key={`c${i}`}
-					className={rect.inside ? "obstacle obstacle-code obstacle-hit" : "obstacle obstacle-code"}
-					points={points(rect)}
-				>
+				<polygon key={`c${i}`} className="obstacle obstacle-code" points={points(rect)}>
 					<title>From Obstacles.java</title>
 				</polygon>
 			))}
 
 			{/* Obstacles drawn on this tab. */}
-			{drawn.map((o, i) => {
+			{drawn.map((o) => {
 				const moving = drag?.kind === "move" && drag.id === o.id;
 				const rect = moving ? { ...o, cx: drag.cx, cy: drag.cy } : o;
-				const classes = ["obstacle", "obstacle-drawn"];
-				if (drawnInside[i] && !moving) classes.push("obstacle-hit");
-				if (o.id === selectedId) classes.push("obstacle-selected");
 				return (
-					<polygon key={o.id} data-obstacle={o.id} className={classes.join(" ")} points={points(rect)}>
+					<polygon
+						key={o.id}
+						data-obstacle={o.id}
+						className={o.id === selectedId ? "obstacle obstacle-drawn obstacle-selected" : "obstacle obstacle-drawn"}
+						points={points(rect)}
+					>
 						<title>Drawn on this tab: drag to move</title>
 					</polygon>
 				);
@@ -223,24 +215,8 @@ export function FieldView(props: Props) {
 				<polyline className="trail" points={trail.map(([x, y]) => `${sx(x)},${sy(y)}`).join(" ")} />
 			)}
 
-			{/* Where it bumped into something. */}
-			{bumps.map((bump) => {
-				const age = now - bump.time;
-				if (age < 0 || age > 1.2) return null;
-				return (
-					<circle
-						key={`b${bump.time.toFixed(3)}-${bump.x.toFixed(2)}`}
-						className="bump"
-						cx={sx(bump.x)}
-						cy={sy(bump.y)}
-						r={10 + age * 70}
-						opacity={1 - age / 1.2}
-					/>
-				);
-			})}
-
 			<g
-				className={`robot${state ? "" : " robot-idle"}${robot.touching ? " robot-touching" : ""}`}
+				className={state ? "robot" : "robot robot-idle"}
 				transform={`translate(${sx(robot.x)} ${sy(robot.y)}) rotate(${(-robot.heading * 180) / Math.PI})`}
 			>
 				<rect
