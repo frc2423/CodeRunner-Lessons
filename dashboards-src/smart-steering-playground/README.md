@@ -36,7 +36,7 @@ sent to the robot), the keyboard, and everything the student sees.
 | `modules/smart-steering-playground/src/main/java/frc/robot/SmartSteering.java` | The student scaffold: `steer(requested, robotPose, currentSpeeds, obstacles)`. |
 | `.../frc/robot/Obstacles.java` | The obstacles written in code (students edit it too). |
 | `.../frc/robot/playground/Playground.java` | The loop: reads the sticks and the tab, calls `steer`, steps the world, publishes. |
-| `.../frc/robot/playground/World.java` | The physics: acceleration limits, pushing the robot out of obstacles, counting bumps. |
+| `.../frc/robot/playground/World.java` | The physics: acceleration limits, solid walls (push out and slide), passable obstacles (the robot drives through; each entry is a bump), counting bumps. |
 | `.../frc/robot/playground/Geometry.java` | Rectangle overlap/separation/distance (separating axis test); public for students. |
 | `.../frc/robot/playground/Debug.java` | Lets student code draw on the tab's field and show values. |
 | `.../frc/robot/playground/DriverInput.java` | Sticks → field-relative `ChassisSpeeds`, from the Driver Station's port 0 or the tab's keyboard. |
@@ -54,7 +54,7 @@ sent to the robot), the keyboard, and everything the student sees.
 | `/SmartDashboard/Playground/Command` | dashboard → robot | `"reset#<nonce>"` puts the robot back at the start and clears the bumps. |
 | `/Playground/Config` | robot → dashboard | JSON, published once: field and robot size, max speeds, start pose (from `PlaygroundConstants.java`). |
 | `/AdvantageKit/RealOutputs/Playground/State` | robot → dashboard | The robot packed in one array; see `toState` in `src/playground.ts` and `publish()` in `Playground.java`. |
-| `.../Playground/Obstacles` | robot → dashboard | Every obstacle except the walls, six numbers each (the five above, then 0 for code or 1 for drawn). |
+| `.../Playground/Obstacles` | robot → dashboard | Every obstacle except the walls, seven numbers each: the five above, 0 for code or 1 for drawn, and 1 if the robot is inside it right now (the tab paints it red). |
 | `.../Playground/Bumps` | robot → dashboard | The last 12 bumps: `[x, y, time, speed]` each. |
 | `.../Playground/Debug/{Shapes,Values}` | robot → dashboard | What student code drew this loop (7 numbers per shape: type, color, then up to five numbers), and `"name\tvalue"` lines. |
 | `.../Playground/{Error,ObstacleError,Time}` | robot → dashboard | Why `steer` or `Obstacles.create` failed, and the robot time (to spot a robot stuck in an endless loop). |

@@ -1,5 +1,5 @@
 import { type PointerEvent, useRef, useState } from "react";
-import type { Bump, Config, DrawnObstacle, Rect, RobotState, Shape, Speeds } from "../playground";
+import type { Bump, CodeObstacle, Config, DrawnObstacle, Rect, RobotState, Shape, Speeds } from "../playground";
 
 /** 100 SVG units per meter; SVG y grows downward, field y grows upward. */
 const S = 100;
@@ -15,8 +15,10 @@ export type Layers = { arrows: boolean; trail: boolean; debug: boolean };
 type Props = {
 	config: Config;
 	state: RobotState | undefined;
-	codeObstacles: Rect[];
+	codeObstacles: CodeObstacle[];
 	drawn: DrawnObstacle[];
+	/** For each drawn obstacle, in order: whether the robot is inside it. */
+	drawnInside: boolean[];
 	selectedId: string | null;
 	onSelect(id: string | null): void;
 	onAdd(rect: Rect): void;
@@ -53,7 +55,7 @@ const fmt = (v: number) => (Math.round(v * 100) / 100).toFixed(2);
  * Drag on an empty spot to draw an obstacle; drag a drawn one to move it.
  */
 export function FieldView(props: Props) {
-	const { config, state, codeObstacles, drawn, selectedId, onSelect, onAdd, onMove, shapes, bumps, trail, layers } =
+	const { config, state, codeObstacles, drawn, drawnInside, selectedId, onSelect, onAdd, onMove, shapes, bumps, trail, layers } =
 		props;
 	const L = config.fieldLength;
 	const W = config.fieldWidth;
@@ -183,23 +185,26 @@ export function FieldView(props: Props) {
 			</text>
 
 			{/* Obstacles from Obstacles.java. */}
+			{/* They light up red while the robot drives through them. */}
 			{codeObstacles.map((rect, i) => (
-				<polygon key={`c${i}`} className="obstacle obstacle-code" points={points(rect)}>
+				<polygon
+					key={`c${i}`}
+					className={rect.inside ? "obstacle obstacle-code obstacle-hit" : "obstacle obstacle-code"}
+					points={points(rect)}
+				>
 					<title>From Obstacles.java</title>
 				</polygon>
 			))}
 
 			{/* Obstacles drawn on this tab. */}
-			{drawn.map((o) => {
+			{drawn.map((o, i) => {
 				const moving = drag?.kind === "move" && drag.id === o.id;
 				const rect = moving ? { ...o, cx: drag.cx, cy: drag.cy } : o;
+				const classes = ["obstacle", "obstacle-drawn"];
+				if (drawnInside[i] && !moving) classes.push("obstacle-hit");
+				if (o.id === selectedId) classes.push("obstacle-selected");
 				return (
-					<polygon
-						key={o.id}
-						data-obstacle={o.id}
-						className={o.id === selectedId ? "obstacle obstacle-drawn obstacle-selected" : "obstacle obstacle-drawn"}
-						points={points(rect)}
-					>
+					<polygon key={o.id} data-obstacle={o.id} className={classes.join(" ")} points={points(rect)}>
 						<title>Drawn on this tab: drag to move</title>
 					</polygon>
 				);

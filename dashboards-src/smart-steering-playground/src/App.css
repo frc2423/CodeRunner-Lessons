@@ -385,6 +385,12 @@ h2 {
 	fill: color-mix(in srgb, var(--orange) 70%, var(--card));
 }
 
+/* The robot is driving through it: smart steering didn't keep it out. */
+.obstacle.obstacle-hit {
+	fill: color-mix(in srgb, var(--bad) 55%, var(--card));
+	stroke: var(--bad);
+}
+
 .obstacle-selected {
 	stroke: var(--text);
 	stroke-width: 5;
@@ -419,6 +425,11 @@ h2 {
 
 .robot {
 	pointer-events: none;
+}
+
+/* Inside an obstacle, see the obstacle through the robot. */
+.robot-touching .robot-body {
+	fill-opacity: 0.6;
 }
 
 .robot-body {

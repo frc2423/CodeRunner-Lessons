@@ -34,7 +34,9 @@ class SteeringCalibrationTest {
   }
 
   static Run drive(Pose2d start, double seconds, DoubleFunction<ChassisSpeeds> driver, Steering steering) {
+    // Steering sees the walls too; the world only needs the (passable) obstacles.
     List<Rectangle2d> obstacles = obstacles();
+    List<Rectangle2d> passable = Obstacles.create();
     World world = new World();
     world.reset(start);
     double minGap = Double.POSITIVE_INFINITY;
@@ -43,7 +45,7 @@ class SteeringCalibrationTest {
       Debug.clear();
       ChassisSpeeds out =
           steering == null ? requested : steering.steer(requested, world.pose(), world.fieldSpeeds(), obstacles);
-      world.step(out, obstacles);
+      world.step(out, passable);
       for (Rectangle2d obstacle : obstacles) {
         minGap = Math.min(minGap, Geometry.distance(world.footprint(), obstacle));
       }
@@ -91,21 +93,42 @@ class SteeringCalibrationTest {
   // Physics ----------------------------------------------------------------------------------------
 
   @Test
-  void robotCantGoThroughWalls() {
-    Run run = drive(PlaygroundConstants.START_POSE, 4, t -> new ChassisSpeeds(4.5, 0, 0), NONE);
-    double front = run.world().pose().getX() + PlaygroundConstants.ROBOT_LENGTH / 2;
-    System.out.printf("Straight into the wall, no steering: front at %.3f, %d bumps%n", front, run.world().bumps());
-    assertEquals(4.5, front, 0.01);
+  void robotDrivesThroughObstacles() {
+    // Straight through the long obstacle at x 4.5 to 5.0: one bump, and out the other side.
+    Run run = drive(PlaygroundConstants.START_POSE, 1.5, t -> new ChassisSpeeds(4.5, 0, 0), NONE);
+    double back = run.world().pose().getX() - PlaygroundConstants.ROBOT_LENGTH / 2;
+    System.out.printf("Through the long obstacle, no steering: back at %.3f, %d bumps%n", back, run.world().bumps());
+    assertTrue(back > 5.0, "should come out the other side");
+    assertEquals(1, run.world().bumps());
+    assertFalse(run.world().touching());
+    assertTrue(run.world().insideTime() > 0.1);
+  }
+
+  @Test
+  void obstacleFlagsWhileInside() {
+    Run run = drive(PlaygroundConstants.START_POSE, 0.95, t -> new ChassisSpeeds(4.5, 0, 0), NONE);
+    boolean[] inside = run.world().inside();
+    System.out.printf("Partway into the long obstacle: x %.2f, inside %s%n", run.world().pose().getX(), java.util.Arrays.toString(inside));
+    assertTrue(inside[0], "should be inside the long obstacle");
+    assertTrue(run.world().touching());
+  }
+
+  @Test
+  void wallsAreSolid() {
+    Run run = drive(PlaygroundConstants.START_POSE, 2, t -> new ChassisSpeeds(-4.5, 0, 0), NONE);
+    double back = run.world().pose().getX() - PlaygroundConstants.ROBOT_LENGTH / 2;
+    System.out.printf("Into the blue wall, no steering: back at %.3f, %d bumps%n", back, run.world().bumps());
+    assertEquals(0, back, 0.01);
     assertEquals(1, run.world().bumps());
     assertTrue(run.world().touching());
   }
 
   @Test
   void robotSlidesAlongWalls() {
-    Run run = drive(PlaygroundConstants.START_POSE, 3, t -> new ChassisSpeeds(3, 3, 0), NONE);
-    System.out.printf("Diagonal into the wall, no steering: (%.2f, %.2f)%n", run.world().pose().getX(), run.world().pose().getY());
-    // It hits the long wall, then slides up past its end and keeps going.
-    assertTrue(run.world().pose().getY() > 6.5, "should slide up along the wall");
+    Run run = drive(new Pose2d(2, 2, Rotation2d.kZero), 2, t -> new ChassisSpeeds(2, -3, 0), NONE);
+    System.out.printf("Diagonal into the bottom wall, no steering: (%.2f, %.2f)%n", run.world().pose().getX(), run.world().pose().getY());
+    assertEquals(PlaygroundConstants.ROBOT_WIDTH / 2, run.world().pose().getY(), 0.01);
+    assertTrue(run.world().pose().getX() > 5.5, "should slide along the wall");
   }
 
   @Test

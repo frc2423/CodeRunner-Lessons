@@ -18,6 +18,10 @@ import java.util.List;
  * robot actually drives at. Right now it returns exactly what the driver asked for, so the robot
  * crashes into everything. Your job is to make it smarter.
  *
+ * <p>The obstacles aren't solid: if your code lets the robot drive into one, it drives right
+ * through it, the obstacle lights up red, and it counts as a bump. That way you can always see when
+ * your steering didn't work. The field walls are solid, though.
+ *
  * <p>Good smart steering:
  *
  * <ul>
@@ -49,9 +53,9 @@ public class SmartSteering {
    * @param robotPose where the robot is now, and which way it faces
    * @param currentSpeeds how fast the robot is moving now, field-relative. It can't change speed
    *     instantly: it takes {@code speed * speed / (2 * MAX_ACCELERATION)} meters to stop.
-   * @param obstacles everything the robot can bump into: the obstacles from {@link Obstacles}, the
-   *     ones drawn on the Playground tab, and the four field walls (as rectangles just outside the
-   *     field)
+   * @param obstacles everything the robot should stay out of: the obstacles from {@link Obstacles},
+   *     the ones drawn on the Playground tab, and the four field walls (as rectangles just outside
+   *     the field)
    * @return the speeds the robot should drive at, field-relative
    */
   public ChassisSpeeds steer(

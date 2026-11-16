@@ -16,15 +16,23 @@ import java.util.Set;
 
 /**
  * The simulated swerve robot. Each loop it accelerates toward the field-relative speeds it's given
- * (no faster than {@link PlaygroundConstants#MAX_ACCELERATION}), moves, and then bumps into
- * anything in its way: it's pushed back out, and loses the part of its speed that was heading into
- * the obstacle, so it slides along walls instead of going through them.
+ * (no faster than {@link PlaygroundConstants#MAX_ACCELERATION}) and moves.
+ *
+ * <ul>
+ *   <li>Obstacles aren't solid: the robot drives straight through them, and every time it drives
+ *       into one counts as a bump. That way it's obvious when smart steering didn't keep it out.
+ *   <li>The field walls are solid: the robot is pushed back out and loses the part of its speed
+ *       heading into the wall, so it slides along it. Hitting one faster than {@link #BUMP_SPEED}
+ *       counts as a bump.
+ * </ul>
  *
  * <p>You don't need to edit this file.
  */
 final class World {
-  /** Hitting something faster than this counts as a bump. */
+  /** Hitting a wall faster than this counts as a bump. */
   static final double BUMP_SPEED = 0.25;
+
+  private static final List<Rectangle2d> WALLS = walls();
 
   /** How many recent bumps the dashboard gets, to flash where they happened. */
   static final int RECENT_BUMPS = 12;
@@ -41,10 +49,11 @@ final class World {
 
   private int bumps = 0;
   private double hardestBump = 0;
-  private double contactTime = 0;
+  private double insideTime = 0;
   private double distance = 0;
   private int resets = 0;
   private boolean touching = false;
+  private boolean[] inside = new boolean[0];
   private Set<Rectangle2d> touchingLastLoop = new HashSet<>();
   private final Deque<Bump> recentBumps = new ArrayDeque<>();
 
@@ -63,15 +72,20 @@ final class World {
     omega = 0;
     bumps = 0;
     hardestBump = 0;
-    contactTime = 0;
+    insideTime = 0;
     distance = 0;
     touching = false;
+    inside = new boolean[0];
     touchingLastLoop = new HashSet<>();
     recentBumps.clear();
     resets++;
   }
 
-  /** Runs one loop: accelerate toward {@code target} (field-relative), move, and bump. */
+  /**
+   * Runs one loop: accelerate toward {@code target} (field-relative), move, and bump.
+   *
+   * @param obstacles the obstacles, not including the walls (the world knows where those are)
+   */
   void step(ChassisSpeeds target, List<Rectangle2d> obstacles) {
     double dt = LOOP_PERIOD;
     time += dt;
@@ -105,33 +119,27 @@ final class World {
     y += vy * dt;
     heading = Rotation2d.fromRadians(heading + omega * dt).getRadians();
 
-    // Bump: push the robot out of whatever it overlaps, a few times in case pushing it out of one
-    // obstacle pushed it into another.
+    // The walls are solid: push the robot back out of any it overlaps, a few times in case pushing
+    // it out of one wall pushed it into another (in a corner).
     Set<Rectangle2d> touchingNow = new HashSet<>();
     for (int pass = 0; pass < 4; pass++) {
       boolean moved = false;
-      for (Rectangle2d obstacle : obstacles) {
-        Translation2d push = Geometry.separation(footprint(), obstacle);
+      for (Rectangle2d wall : WALLS) {
+        Translation2d push = Geometry.separation(footprint(), wall);
         double length = push.getNorm();
         if (length < 1e-9) {
           continue;
         }
         moved = true;
-        touchingNow.add(obstacle);
+        touchingNow.add(wall);
         double nx = push.getX() / length;
         double ny = push.getY() / length;
         x += push.getX() + nx * 1e-6;
         y += push.getY() + ny * 1e-6;
-        double into = vx * nx + vy * ny; // negative while heading into the obstacle
+        double into = vx * nx + vy * ny; // negative while heading into the wall
         if (into < 0) {
-          if (!touchingLastLoop.contains(obstacle) && -into > BUMP_SPEED) {
-            bumps++;
-            hardestBump = Math.max(hardestBump, -into);
-            Translation2d where = obstacle.nearest(new Translation2d(x, y));
-            recentBumps.addLast(new Bump(where.getX(), where.getY(), time, -into));
-            while (recentBumps.size() > RECENT_BUMPS) {
-              recentBumps.removeFirst();
-            }
+          if (!touchingLastLoop.contains(wall) && -into > BUMP_SPEED) {
+            bump(wall, -into);
           }
           vx -= into * nx;
           vy -= into * ny;
@@ -141,19 +149,46 @@ final class World {
         break;
       }
     }
-
-    // Pressed up against something without moving into it this loop still counts as touching it.
-    for (Rectangle2d obstacle : obstacles) {
-      if (!touchingNow.contains(obstacle) && Geometry.distance(footprint(), obstacle) < 1e-4) {
-        touchingNow.add(obstacle);
+    // Pressed up against a wall without moving into it this loop still counts as touching it.
+    for (Rectangle2d wall : WALLS) {
+      if (!touchingNow.contains(wall) && Geometry.distance(footprint(), wall) < 1e-4) {
+        touchingNow.add(wall);
       }
     }
+
+    // Obstacles aren't solid: the robot drives right through them, so it's easy to see when smart
+    // steering didn't keep it out. Every time it drives into one counts as a bump.
+    inside = new boolean[obstacles.size()];
+    boolean insideAny = false;
+    for (int i = 0; i < obstacles.size(); i++) {
+      Rectangle2d obstacle = obstacles.get(i);
+      if (!Geometry.overlaps(footprint(), obstacle)) {
+        continue;
+      }
+      inside[i] = true;
+      insideAny = true;
+      touchingNow.add(obstacle);
+      if (!touchingLastLoop.contains(obstacle)) {
+        bump(obstacle, Math.hypot(vx, vy));
+      }
+    }
+
     touching = !touchingNow.isEmpty();
-    if (touching) {
-      contactTime += dt;
+    if (insideAny) {
+      insideTime += dt;
     }
     touchingLastLoop = touchingNow;
     distance += Math.hypot(x - startX, y - startY);
+  }
+
+  private void bump(Rectangle2d what, double speed) {
+    bumps++;
+    hardestBump = Math.max(hardestBump, speed);
+    Translation2d where = what.nearest(new Translation2d(x, y));
+    recentBumps.addLast(new Bump(where.getX(), where.getY(), time, speed));
+    while (recentBumps.size() > RECENT_BUMPS) {
+      recentBumps.removeFirst();
+    }
   }
 
   /** The four field walls, as rectangles just outside the field. */
@@ -196,14 +231,21 @@ final class World {
     return hardestBump;
   }
 
-  double contactTime() {
-    return contactTime;
+  /** How long the robot has spent inside obstacles. */
+  double insideTime() {
+    return insideTime;
+  }
+
+  /** Whether the robot overlaps each obstacle, in the order the last {@link #step} got them. */
+  boolean[] inside() {
+    return inside.clone();
   }
 
   double distance() {
     return distance;
   }
 
+  /** Whether the robot is inside an obstacle or against a wall. */
   boolean touching() {
     return touching;
   }

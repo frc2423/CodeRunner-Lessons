@@ -72,12 +72,14 @@ export type RobotState = {
 	driving: boolean;
 	smartOn: boolean;
 	bumps: number;
+	/** Inside an obstacle, or against a wall. */
 	touching: boolean;
 	/** How long SmartSteering.steer took, in microseconds. */
 	steerMicros: number;
 	/** Goes up by one every time the robot is reset. */
 	resets: number;
-	contactTime: number;
+	/** How long the robot has spent inside obstacles. */
+	insideTime: number;
 	distance: number;
 	hardestBump: number;
 	sticks: [number, number, number];
@@ -99,7 +101,7 @@ function toState(v: number[] | undefined): RobotState | undefined {
 		touching: v[16] > 0.5,
 		steerMicros: v[17],
 		resets: v[18],
-		contactTime: v[19],
+		insideTime: v[19],
 		distance: v[20],
 		hardestBump: v[21],
 		sticks: [v[22], v[23], v[24]],
@@ -112,15 +114,27 @@ export type Rect = { cx: number; cy: number; xw: number; yw: number; rot: number
 /** An obstacle drawn on this tab. */
 export type DrawnObstacle = Rect & { id: string };
 
-function toRects(v: number[] | undefined, stride: number): Rect[] {
-	const rects: Rect[] = [];
-	if (!Array.isArray(v)) return rects;
-	for (let i = 0; i + stride <= v.length; i += stride) {
-		// Only the obstacles from Obstacles.java: drawn ones come from this tab.
-		if (stride === 6 && v[i + 5] !== 0) continue;
-		rects.push({ cx: v[i], cy: v[i + 1], xw: v[i + 2], yw: v[i + 3], rot: v[i + 4] });
+/** An obstacle from Obstacles.java, and whether the robot is driving through it. */
+export type CodeObstacle = Rect & { inside: boolean };
+
+/**
+ * Splits `Playground/Obstacles` (seven numbers each: the rectangle, 0 for code
+ * or 1 for drawn, 1 if the robot is inside it) into the obstacles from code and
+ * which drawn ones the robot is inside, in the order this tab sent them.
+ */
+function toObstacles(v: number[] | undefined): { code: CodeObstacle[]; drawnInside: boolean[] } {
+	const code: CodeObstacle[] = [];
+	const drawnInside: boolean[] = [];
+	if (!Array.isArray(v)) return { code, drawnInside };
+	for (let i = 0; i + 7 <= v.length; i += 7) {
+		const inside = v[i + 6] > 0.5;
+		if (v[i + 5] === 0) {
+			code.push({ cx: v[i], cy: v[i + 1], xw: v[i + 2], yw: v[i + 3], rot: v[i + 4], inside });
+		} else {
+			drawnInside.push(inside);
+		}
 	}
-	return rects;
+	return { code, drawnInside };
 }
 
 export type Bump = { x: number; y: number; time: number; speed: number };
@@ -266,7 +280,9 @@ export type Playground = {
 	stalled: boolean;
 	config: Config;
 	state: RobotState | undefined;
-	codeObstacles: Rect[];
+	codeObstacles: CodeObstacle[];
+	/** For each drawn obstacle, in order: whether the robot is inside it. */
+	drawnInside: boolean[];
 	bumps: Bump[];
 	shapes: Shape[];
 	values: [string, string][];
@@ -290,7 +306,7 @@ export function usePlayground(drawn: DrawnObstacle[], smartOn: boolean): Playgro
 
 	const config = useMemo(() => parseConfig(configText), [configText]);
 	const state = useMemo(() => toState(stateValues), [stateValues]);
-	const codeObstacles = useMemo(() => toRects(obstacleValues, 6), [obstacleValues]);
+	const obstacles = useMemo(() => toObstacles(obstacleValues), [obstacleValues]);
 	const bumps = useMemo(() => toBumps(bumpValues), [bumpValues]);
 	const shapes = useMemo(() => toShapes(shapeValues), [shapeValues]);
 	const values = useMemo(() => toValues(valueLines), [valueLines]);
@@ -318,7 +334,8 @@ export function usePlayground(drawn: DrawnObstacle[], smartOn: boolean): Playgro
 		stalled: live && stalled,
 		config,
 		state: live ? state : undefined,
-		codeObstacles: live ? codeObstacles : [],
+		codeObstacles: live ? obstacles.code : [],
+		drawnInside: live ? obstacles.drawnInside : [],
 		bumps: live ? bumps : [],
 		shapes: live ? shapes : [],
 		values: live ? values : [],

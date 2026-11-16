@@ -55,7 +55,11 @@ public class Playground {
   private final List<Rectangle2d> walls = World.walls();
   private List<Rectangle2d> codeObstacles = List.of();
   private List<Rectangle2d> drawnObstacles = List.of();
+  /** Obstacles from code and the tab: the robot can drive through these. */
+  private List<Rectangle2d> obstacles = List.of();
+  /** {@link #obstacles} plus the (solid) walls: what SmartSteering gets. */
   private List<Rectangle2d> allObstacles = List.of();
+
   private double[] lastDrawn = new double[0];
   private String lastCommand = "";
 
@@ -150,7 +154,7 @@ public class Playground {
       steeringError = "";
     }
 
-    world.step(driving ? steered : new ChassisSpeeds(), allObstacles);
+    world.step(driving ? steered : new ChassisSpeeds(), obstacles);
     publish();
   }
 
@@ -193,8 +197,10 @@ public class Playground {
   }
 
   private void rebuildObstacles() {
-    List<Rectangle2d> all = new ArrayList<>(codeObstacles);
-    all.addAll(drawnObstacles);
+    List<Rectangle2d> both = new ArrayList<>(codeObstacles);
+    both.addAll(drawnObstacles);
+    obstacles = List.copyOf(both);
+    List<Rectangle2d> all = new ArrayList<>(both);
     all.addAll(walls);
     allObstacles = Collections.unmodifiableList(all);
   }
@@ -229,7 +235,7 @@ public class Playground {
           world.touching() ? 1 : 0,
           steerMicros,
           world.resets(),
-          world.contactTime(),
+          world.insideTime(),
           world.distance(),
           world.hardestBump(),
           sticks[0],
@@ -237,15 +243,21 @@ public class Playground {
           sticks[2],
         });
 
-    double[] obstacles = new double[(codeObstacles.size() + drawnObstacles.size()) * 6];
-    int i = 0;
-    for (Rectangle2d obstacle : codeObstacles) {
-      i = putObstacle(obstacles, i, obstacle, 0);
+    // Seven numbers per obstacle: the rectangle, 0 (code) or 1 (drawn), and 1 if the robot is in
+    // it.
+    boolean[] inside = world.inside();
+    double[] obstacleData = new double[obstacles.size() * 7];
+    for (int i = 0; i < obstacles.size(); i++) {
+      Rectangle2d obstacle = obstacles.get(i);
+      obstacleData[i * 7] = obstacle.getCenter().getX();
+      obstacleData[i * 7 + 1] = obstacle.getCenter().getY();
+      obstacleData[i * 7 + 2] = obstacle.getXWidth();
+      obstacleData[i * 7 + 3] = obstacle.getYWidth();
+      obstacleData[i * 7 + 4] = obstacle.getRotation().getRadians();
+      obstacleData[i * 7 + 5] = i < codeObstacles.size() ? 0 : 1;
+      obstacleData[i * 7 + 6] = i < inside.length && inside[i] ? 1 : 0;
     }
-    for (Rectangle2d obstacle : drawnObstacles) {
-      i = putObstacle(obstacles, i, obstacle, 1);
-    }
-    Logger.recordOutput("Playground/Obstacles", obstacles);
+    Logger.recordOutput("Playground/Obstacles", obstacleData);
 
     List<World.Bump> bumps = world.recentBumps();
     double[] bumpData = new double[bumps.size() * 4];
@@ -270,16 +282,6 @@ public class Playground {
         ChassisSpeeds.fromFieldRelativeSpeeds(current, pose.getRotation());
     SwerveModuleState[] states = kinematics.toSwerveModuleStates(robotRelative);
     Logger.recordOutput("Playground/ModuleStates", states);
-  }
-
-  private static int putObstacle(double[] out, int i, Rectangle2d obstacle, int source) {
-    out[i] = obstacle.getCenter().getX();
-    out[i + 1] = obstacle.getCenter().getY();
-    out[i + 2] = obstacle.getXWidth();
-    out[i + 3] = obstacle.getYWidth();
-    out[i + 4] = obstacle.getRotation().getRadians();
-    out[i + 5] = source;
-    return i + 6;
   }
 
   private static String config() {

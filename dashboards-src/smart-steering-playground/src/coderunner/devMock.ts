@@ -90,7 +90,7 @@ export function installDevMock(): void {
 	let omega = 0;
 	let bumps = 0;
 	let hardest = 0;
-	let contactTime = 0;
+	let insideTime = 0;
 	let distance = 0;
 	let resets = 1;
 	let touchingLast = new Set<Rect>();
@@ -104,7 +104,7 @@ export function installDevMock(): void {
 		vx = vy = omega = 0;
 		bumps = 0;
 		hardest = 0;
-		contactTime = 0;
+		insideTime = 0;
 		distance = 0;
 		touchingLast = new Set();
 		recent = [];
@@ -167,10 +167,17 @@ export function installDevMock(): void {
 		x += vx * DT;
 		y += vy * DT;
 		heading = Math.atan2(Math.sin(heading + omega * DT), Math.cos(heading + omega * DT));
+		// Walls are solid; obstacles aren't (the robot drives through, and each entry is a bump).
+		const bump = (o: Rect, speed: number) => {
+			bumps++;
+			hardest = Math.max(hardest, speed);
+			const [bx, by] = nearest(o, x, y);
+			recent = [...recent.slice(-11), [bx, by, time, speed]];
+		};
 		const touchingNow = new Set<Rect>();
 		for (let pass = 0; pass < 4; pass++) {
 			let moved = false;
-			for (const o of obstacles) {
+			for (const o of walls) {
 				const push = penetration(footprint(), o);
 				if (!push) continue;
 				moved = true;
@@ -182,20 +189,22 @@ export function installDevMock(): void {
 				y += push[1] + ny * 1e-6;
 				const into = vx * nx + vy * ny;
 				if (into < 0) {
-					if (!touchingLast.has(o) && -into > 0.25) {
-						bumps++;
-						hardest = Math.max(hardest, -into);
-						const [bx, by] = nearest(o, x, y);
-						recent = [...recent.slice(-11), [bx, by, time, -into]];
-					}
+					if (!touchingLast.has(o) && -into > 0.25) bump(o, -into);
 					vx -= into * nx;
 					vy -= into * ny;
 				}
 			}
 			if (!moved) break;
 		}
-		for (const o of obstacles) if (!touchingNow.has(o) && rectDistance(footprint(), o) < 1e-4) touchingNow.add(o);
-		if (touchingNow.size > 0) contactTime += DT;
+		for (const o of walls) if (!touchingNow.has(o) && rectDistance(footprint(), o) < 1e-4) touchingNow.add(o);
+		const passable = [...codeObstacles, ...drawn];
+		const inside = passable.map((o) => penetration(footprint(), o) !== null);
+		passable.forEach((o, i) => {
+			if (!inside[i]) return;
+			touchingNow.add(o);
+			if (!touchingLast.has(o)) bump(o, Math.hypot(vx, vy));
+		});
+		if (inside.some(Boolean)) insideTime += DT;
 		touchingLast = touchingNow;
 		distance += Math.hypot(x - x0, y - y0);
 
@@ -203,13 +212,14 @@ export function installDevMock(): void {
 		put(`${OUT}/Time`, "double", time);
 		put(`${OUT}/State`, "double[]", [
 			time, x, y, heading, vx, vy, omega, req.vx, req.vy, req.omega, steered.vx, steered.vy, steered.omega,
-			driving ? 1 : 0, smartOn ? 1 : 0, bumps, touchingNow.size > 0 ? 1 : 0, smartOn ? 12 : 0, resets, contactTime,
+			driving ? 1 : 0, smartOn ? 1 : 0, bumps, touchingNow.size > 0 ? 1 : 0, smartOn ? 12 : 0, resets, insideTime,
 			distance, hardest, keys[0] ?? 0, keys[1] ?? 0, keys[4] ?? 0,
 		]);
-		put(`${OUT}/Obstacles`, "double[]", [
-			...codeObstacles.flatMap((o) => [o.cx, o.cy, o.xw, o.yw, o.rot, 0]),
-			...drawn.flatMap((o) => [o.cx, o.cy, o.xw, o.yw, o.rot, 1]),
-		]);
+		put(
+			`${OUT}/Obstacles`,
+			"double[]",
+			passable.flatMap((o, i) => [o.cx, o.cy, o.xw, o.yw, o.rot, i < codeObstacles.length ? 0 : 1, inside[i] ? 1 : 0]),
+		);
 		put(`${OUT}/Bumps`, "double[]", recent.flat());
 		put(`${OUT}/Debug/Shapes`, "double[]", smartOn ? [2, 0, x + req.vx * 0.5, y + req.vy * 0.5, C.robotLength, C.robotWidth, heading] : []);
 		put(

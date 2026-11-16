@@ -2,7 +2,9 @@
 
 In Mario Kart, smart steering keeps you on the track: you still drive, but the game quietly nudges you away from the edges. In this playground you write the same thing for a swerve robot. The driver drives with a gamepad or the keyboard, and your code makes sure the robot never crashes into an obstacle or a field wall, without taking the driving away from them.
 
-Open the **Playground** tab next to AdvantageScope. It shows the field from above: the robot (the arrow shows which way it faces), the obstacles, what the driver asked for (dashed arrow) and what your steering code really drove (green arrow). Every crash flashes red and counts as a bump.
+Open the **Playground** tab next to AdvantageScope. It shows the field from above: the robot (the arrow shows which way it faces), the obstacles, what the driver asked for (dashed arrow) and what your steering code really drove (green arrow).
+
+The obstacles aren't solid: when the robot drives into one, it goes straight through, the obstacle lights up red, and it counts as a **bump**. That way you can always see when your smart steering didn't work. The field walls are solid, and hitting one counts as a bump too.
 
 Your code goes in `src/main/java/frc/robot/SmartSteering.java`. Every 20 ms the robot calls its `steer` method with:
 
@@ -13,7 +15,7 @@ Your code goes in `src/main/java/frc/robot/SmartSteering.java`. Every 20 ms the 
 | `currentSpeeds` | How fast the robot is really moving, field-relative (it can't change speed instantly) |
 | `obstacles` | Every obstacle as a `Rectangle2d`, including the four field walls |
 
-Whatever `steer` returns is what the robot drives at. Right now it returns exactly what the driver asked for, so the robot crashes into everything.
+Whatever `steer` returns is what the robot drives at. Right now it returns exactly what the driver asked for, so the robot drives straight through everything.
 
 ## Steps
 
@@ -27,7 +29,7 @@ Whatever `steer` returns is what the robot drives at. Right now it returns exact
    | Shift (held) | | half speed |
 
    To use a gamepad, plug it in and pick it in the Driver Station's **Controls**. Driving is field-relative: W (or up on the stick) always drives away from the blue driver station, to the right on the tab, whichever way the robot faces.
-3. Crash into things, and watch the **Bumps** count go up.
+3. Drive through some obstacles, and watch them light up and the **Bumps** count go up.
 4. Add obstacles: drag on the field to draw one. Drag a drawn obstacle to move it, or click it to rotate or delete it. Obstacles written in code go in `Obstacles.java`; **Copy as code** turns the ones you drew into lines you can paste there.
 5. Write your smart steering in `SmartSteering.java`. Save, then click **Restart** in the Driver Station to run your new code. Some ideas, from simplest to smartest:
    1. **Look ahead.** Where will the robot be in a moment if it keeps going? Draw it with `Debug.rectangle` and check it against every obstacle with `Geometry.overlaps`.
