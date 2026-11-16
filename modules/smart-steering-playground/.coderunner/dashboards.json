@@ -1,0 +1,8 @@
+{
+  "dashboards": [
+    {
+      "title": "Playground",
+      "entry": "dashboard/index.html"
+    }
+  ]
+}

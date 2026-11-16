@@ -24,6 +24,14 @@
       "subdir": "modules/advantagekit-challenges",
       "kind": "robot",
       "order": 30
+    },
+    {
+      "id": "smart-steering-playground",
+      "title": "Smart Steering Playground",
+      "description": "Drive a simulated swerve robot around obstacles, and write the smart steering that keeps it from crashing into them, like in Mario Kart.",
+      "subdir": "modules/smart-steering-playground",
+      "kind": "robot",
+      "order": 40
     }
   ]
 }
